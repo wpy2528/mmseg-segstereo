@@ -84,6 +84,7 @@ def inference(args: argparse.Namespace, logger: MMLogger) -> dict:
         # TODO: Support MaskFormer and Mask2Former
         raise NotImplementedError('MaskFormer and Mask2Former are not '
                                   'supported yet.')
+    print(data['inputs'].shape)
     outputs = get_model_complexity_info(
         model,
         input_shape=None,

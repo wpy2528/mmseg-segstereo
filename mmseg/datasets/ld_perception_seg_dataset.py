@@ -8,8 +8,8 @@ from .basesegdataset import BaseSegDataset
 from typing import Callable, Dict, List
 
 @DATASETS.register_module()
-class LDMowerDataset(BaseSegDataset):
-    """乐动割草机数据集
+class LDPerceptionSegDataset(BaseSegDataset):
+    """乐动割草机分割数据集
 
     Args:
         split (str): Split txt file for LDMower.

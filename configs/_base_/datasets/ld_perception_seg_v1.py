@@ -1,5 +1,5 @@
 # dataset settings
-dataset_type = 'LDMowerDataset'
+dataset_type = 'LDPerceptionSegDataset'
 data_root = 'data/perception_segmentation/0107'
 crop_size = (512, 512)
 train_pipeline = [

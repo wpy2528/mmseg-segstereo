@@ -52,6 +52,7 @@ class IoUMetric(BaseMetric):
                  output_dir: Optional[str] = None,
                  format_only: bool = False,
                  prefix: Optional[str] = None,
+                 calc_per_sample_metric: bool = False,
                  **kwargs) -> None:
         super().__init__(collect_device=collect_device, prefix=prefix)
 
@@ -63,6 +64,7 @@ class IoUMetric(BaseMetric):
         if self.output_dir and is_main_process():
             mkdir_or_exist(self.output_dir)
         self.format_only = format_only
+        self.calc_per_sample_metric = calc_per_sample_metric
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data and data_samples.
@@ -83,9 +85,9 @@ class IoUMetric(BaseMetric):
                     pred_label)
                 self.results.append(
                     self.intersect_and_union(pred_label, label, num_classes,
-                                             self.ignore_index))
+                                             self.ignore_index) + (data_sample['img_path'],)) # [4, num_classes] for I U Pred GT
             # format_result
-            if self.output_dir is not None:
+            if False and self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
                     data_sample['img_path']))[0]
                 png_filename = osp.abspath(
@@ -115,11 +117,51 @@ class IoUMetric(BaseMetric):
         if self.format_only:
             logger.info(f'results are saved to {osp.dirname(self.output_dir)}')
             return OrderedDict()
+        
+        if self.calc_per_sample_metric:
+            # 对每个样本分别计算指标
+            per_sample_metrics = []
+            for result in results:
+                # 每个result包含intersect, union, pred, label, img_path
+                sample_intersect = result[0]
+                sample_union = result[1] 
+                sample_pred = result[2]
+                sample_label = result[3]
+                sample_path = result[4]
+
+                # 计算单个样本的指标
+                sample_metrics = self.total_area_to_metrics(
+                    sample_intersect, sample_union, sample_pred,
+                    sample_label, self.metrics, self.nan_to_num, self.beta)
+
+                # 添加样本路径
+                sample_metrics['img_path'] = sample_path
+                per_sample_metrics.append(sample_metrics)
+
+            # 保存每个样本的指标结果
+            import json
+            import os.path as osp
+            metrics_file = osp.join(self.output_dir, 'per_sample_metrics.json')
+            with open(metrics_file, 'w') as f:
+                # 将numpy数组转换为普通Python数值类型
+                metrics_list = []
+                for metrics in per_sample_metrics:
+                    metrics_dict = {}
+                    for k, v in metrics.items():
+                        if isinstance(v, np.ndarray):
+                            metrics_dict[k] = v.tolist()
+                        elif isinstance(v, np.float32) or isinstance(v, np.float64):
+                            metrics_dict[k] = float(v)
+                        else:
+                            metrics_dict[k] = v
+                    metrics_list.append(metrics_dict)
+                json.dump(metrics_list, f, indent=2)
+            logger.info(f'Per sample metrics saved to {metrics_file}')
         # convert list of tuples to tuple of lists, e.g.
         # [(A_1, B_1, C_1, D_1), ...,  (A_n, B_n, C_n, D_n)] to
         # ([A_1, ..., A_n], ..., [D_1, ..., D_n])
         results = tuple(zip(*results))
-        assert len(results) == 4
+        assert len(results) in [4, 5]
 
         total_area_intersect = sum(results[0])
         total_area_union = sum(results[1])

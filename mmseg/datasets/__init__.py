@@ -40,7 +40,7 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
                          SegRescale)
 from .voc import PascalVOCDataset
-from .ld_mower import LDMowerDataset
+from .ld_perception_seg_dataset import LDPerceptionSegDataset
 
 # yapf: enable
 __all__ = [
@@ -64,5 +64,5 @@ __all__ = [
     'ConcatCDInput', 'BaseCDDataset', 'DSDLSegDataset', 'BDD100KDataset',
     'NYUDataset', 'HSIDrive20Dataset',
     
-    'LDMowerDataset',
+    'LDPerceptionSegDataset',
 ]
