@@ -16,7 +16,7 @@ class LDPerceptionSegDataset(BaseSegDataset):
     """
     METAINFO = dict(
         classes=('background', 'grass', 'water', 'soil', 'animal'),
-        palette=[[128, 0, 128], [0, 255, 0], [255, 0, 0], [0, 255, 255], [0, 0, 255]]
+        palette=[[128, 0, 128], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 0]]
     )
     def __init__(self,
                  ann_file,
