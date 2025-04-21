@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import time
+import os
 import argparse
 import os.path as osp
 
@@ -39,6 +41,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.output_dir is not None:
+        os.makedirs(args.output_dir, exist_ok=True)
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
@@ -69,7 +73,7 @@ def main():
             draw_pred=False,
             wait_time=args.show_interval,
             out_file=out_file,
-            show=not args.not_show)
+            show=False)
         progress_bar.update()
 
 

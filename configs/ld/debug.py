@@ -116,14 +116,14 @@ test_pipeline = [
 #         ])
 # ]
 train_dataloader = dict(
-    batch_size=8,
-    num_workers=4,
+    batch_size=4,
+    num_workers=8,
     persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    sampler=dict(type='InfiniteSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file='train.txt',
+        ann_file='train_dummy.txt',
         pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=1,
@@ -166,20 +166,12 @@ optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
 # learning policy
 param_scheduler = [
     dict(
-        type='LinearLR',
-        start_factor=1e-4,
-        by_epoch=True,
-        begin=0,
-        end=3  # 前3个 epoch warmup
-    ),
-    dict(
         type='PolyLR',
         eta_min=1e-4,
         power=0.9,
-        by_epoch=True,
-        begin=3,
-        end=50
-    )
+        begin=0,
+        end=240000,
+        by_epoch=False)
 ]
 # training schedule for 240k
 train_cfg = dict(by_epoch=True, max_epochs=50, val_interval=1)
@@ -189,8 +181,8 @@ val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=50),
+    logger=dict(type='LoggerHook', interval=1),
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(type='CheckpointHook', interval=1),
     sampler_seed=dict(type='DistSamplerSeedHook'),
-    visualization=dict(type='SegVisualizationHook', draw=False, interval=1))
+    visualization=dict(type='SegVisualizationHook'))

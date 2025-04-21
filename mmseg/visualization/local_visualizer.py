@@ -72,7 +72,7 @@ class SegLocalVisualizer(Visualizer):
                  classes: Optional[List] = None,
                  palette: Optional[List] = None,
                  dataset_name: Optional[str] = None,
-                 alpha: float = 0.8,
+                 alpha: float = 0.3,
                  **kwargs):
         super().__init__(name, image, vis_backends, save_dir, **kwargs)
         self.alpha: float = alpha
@@ -135,11 +135,11 @@ class SegLocalVisualizer(Visualizer):
 
         colors = [palette[label] for label in labels]
 
-        mask = np.zeros_like(image, dtype=np.uint8)
+        mask = np.zeros_like(image, dtype=np.uint8).copy()
         for label, color in zip(labels, colors):
             mask[sem_seg[0] == label, :] = color
 
-        if with_labels:
+        if False and with_labels:
             font = cv2.FONT_HERSHEY_SIMPLEX
             # (0,1] to change the size of the text relative to the image
             scale = 0.05
@@ -165,6 +165,7 @@ class SegLocalVisualizer(Visualizer):
                 text = classes[classes_id]
                 (label_width, label_height), baseline = cv2.getTextSize(
                     text, font, fontScale, thickness)
+                loc = tuple(loc.tolist())
                 mask = cv2.rectangle(mask, loc,
                                      (loc[0] + label_width + baseline,
                                       loc[1] + label_height + baseline),

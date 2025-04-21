@@ -24,7 +24,7 @@ model = dict(
     data_preprocessor=data_preprocessor,
     pretrained='open-mmlab://resnet50_v1c',
     backbone=dict(
-        type='ResNetV1c',
+        type='Yolov5DSBackbone',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -35,7 +35,7 @@ model = dict(
         style='pytorch',
         contract_dilation=True),
     decode_head=dict(
-        type='DepthwiseSeparableASPPHead',
+        type='DummyHead',
         in_channels=2048,
         in_index=3,
         channels=512,
@@ -46,25 +46,14 @@ model = dict(
         num_classes=NUM_CLASSES,
         norm_cfg=norm_cfg,
         align_corners=False,
-        # loss_decode=[
-        # dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
-        # dict(type='DiceLoss', loss_name='loss_dice', loss_weight=3.0)
-        # ]
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
-    auxiliary_head=dict(
-        type='FCNHead',
-        in_channels=1024,
-        in_index=2,
-        channels=256,
-        num_convs=1,
-        concat_input=False,
-        dropout_ratio=0.1,
-        num_classes=NUM_CLASSES,
-        norm_cfg=norm_cfg,
-        align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+        loss_decode=[
+        dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
+        dict(type='DiceLoss', loss_name='loss_dice', loss_weight=3.0)
+        ],
+        # loss_decode=dict(
+        #     type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)
+        ),
+    auxiliary_head=None,
     # model training and testing settings
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
@@ -116,7 +105,7 @@ test_pipeline = [
 #         ])
 # ]
 train_dataloader = dict(
-    batch_size=8,
+    batch_size=16,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -193,4 +182,4 @@ default_hooks = dict(
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(type='CheckpointHook', interval=1),
     sampler_seed=dict(type='DistSamplerSeedHook'),
-    visualization=dict(type='SegVisualizationHook', draw=False, interval=1))
+    visualization=dict(type='SegVisualizationHook'))

@@ -73,20 +73,50 @@ model = dict(
 # dataset settings
 dataset_type = 'LDPerceptionSegDataset'
 data_root = 'data/perception_segmentation/0107'
-# crop_size = (512, 512)
+
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations'),
+    
+    # 随机缩放图像 & mask（多尺度增强）
     dict(
-        type='Resize',
-        scale=RESIZE_SIZE,     # 固定缩放到给定尺寸
-        keep_ratio=False      # 禁止保持原始比例，强制变形
+        type='RandomResize',
+        scale=(320, 320),
+        ratio_range=(1.0, 2.0),  # 尺寸随机缩放
+        keep_ratio=False
     ),
-    # dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
+    
+    # 随机裁剪固定尺寸（控制输入大小 & 兼顾上下文）
+    dict(
+        type='RandomCrop',
+        crop_size=(320, 320),
+        cat_max_ratio=0.75  # 避免某类 dominate 整张图（比如全是背景）
+    ),
+    
+    # 随机翻转
     dict(type='RandomFlip', prob=0.5),
-    # dict(type='PhotoMetricDistortion'),
-    dict(type='PackSegInputs')
+    
+    # 随机颜色扰动（亮度、饱和度、对比度等）
+    dict(
+        type='PhotoMetricDistortion',
+        brightness_delta=32,
+        contrast_range=(0.5, 1.5),
+        saturation_range=(0.5, 1.5),
+        hue_delta=18
+    ),
+    
+    # Padding 补全到固定尺寸（保证输入张量一致）
+    dict(
+        type='Pad',
+        size=(320, 320),
+        pad_val=255,
+        # seg_pad_val=255  # ignore_index
+    ),
+    
+    # 转换为 tensor 并归一化
+    dict(type='PackSegInputs')  # 替代 Normalize + ToTensor
 ]
+
 test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
@@ -116,7 +146,7 @@ test_pipeline = [
 #         ])
 # ]
 train_dataloader = dict(
-    batch_size=8,
+    batch_size=16,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -193,4 +223,4 @@ default_hooks = dict(
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(type='CheckpointHook', interval=1),
     sampler_seed=dict(type='DistSamplerSeedHook'),
-    visualization=dict(type='SegVisualizationHook', draw=False, interval=1))
+    visualization=dict(type='SegVisualizationHook', draw=True, interval=1))
