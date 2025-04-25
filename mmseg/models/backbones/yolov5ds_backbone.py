@@ -5,9 +5,6 @@ from mmcv.cnn import ConvModule
 from mmengine.model import BaseModule
 
 from mmseg.registry import MODELS
-from ..decode_heads.psp_head import PPM
-from ..utils import resize
-
 
 import os
 from tqdm import tqdm
@@ -73,51 +70,22 @@ class Yolov5DSBackbone(BaseModule):
                 dict(type='Normal', mean=0.01, layer='Linear')
             ]
         super().__init__(init_cfg=init_cfg)
-        cfg = 'models/my_yolov5s.yaml'
-        segcfg = 'models/my_segheads.yaml'
+        cfg = 'mmseg/models/backbones/my_yolov5s.yaml'
+        segcfg = 'mmseg/models/backbones/my_segheads.yaml'
         nc = 5
         segnc = 5
         # torch.Size([20, 3, 40, 40, 25]) torch.Size([20, 3, 20, 20, 25]) torch.Size([20, 3, 10, 10, 25])
         # [20, 3, 320, 320] -> [20, 5, 320, 320]
         self.backbone = Model(cfg, segcfg, ch=3, nc=nc, segnc=segnc, anchors=None)
-        dummy_input_t = torch.randn(20, 3, 320, 320)
-        dummy_output_t = self.backbone(dummy_input_t)
-        feats, seg_pred = dummy_output_t
-        print(feats[0].shape, feats[1].shape, feats[2].shape)
-        print(seg_pred[0].shape)
 
     def forward(self, x):
         output = self.backbone(x)
-        return output
-        output = []
+        return output[1]
 
-        # sub 1
-        output.append(self.conv_sub1(x))
 
-        # sub 2
-        x = resize(
-            x,
-            scale_factor=0.5,
-            mode='bilinear',
-            align_corners=self.align_corners)
-        x = self.backbone.stem(x)
-        x = self.backbone.maxpool(x)
-        x = self.backbone.layer1(x)
-        x = self.backbone.layer2(x)
-        output.append(self.conv_sub2(x))
-
-        # sub 4
-        x = resize(
-            x,
-            scale_factor=0.5,
-            mode='bilinear',
-            align_corners=self.align_corners)
-        x = self.backbone.layer3(x)
-        x = self.backbone.layer4(x)
-        psp_outs = self.psp_modules(x) + [x]
-        psp_outs = torch.cat(psp_outs, dim=1)
-        x = self.psp_bottleneck(psp_outs)
-
-        output.append(self.conv_sub4(x))
-
-        return output
+if __name__ == "__main__":
+    model = Yolov5DSBackbone()
+    x = torch.randn(20, 3, 320, 320)
+    output = model(x)
+    print(output[0].shape, output[1].shape, output[2].shape)
+    print(output[3].shape)

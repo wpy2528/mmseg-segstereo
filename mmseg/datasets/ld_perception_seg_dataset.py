@@ -28,15 +28,21 @@ class LDPerceptionSegDataset(BaseSegDataset):
             seg_map_suffix=seg_map_suffix,
             ann_file=ann_file,
             **kwargs)
-        assert osp.isfile(self.ann_file)
 
     # 加载yolo风格的数据集
     def load_data_list(self) -> List[dict]:
         data_list = []
-        assert osp.isfile(self.ann_file), \
-            f'Failed to load `ann_file` {self.ann_file}'
-        with open(self.ann_file, 'r') as f:
-            lines = [line.strip() for line in f.readlines()]
+        if isinstance(self.ann_file, list):
+            ann_files = self.ann_file
+        elif osp.isfile(self.ann_file):
+            ann_files = [self.ann_file]
+        else:
+            raise ValueError(f'你这鸟玩意既不是一个文件也不是一个列表，你搁这逗我玩呢？ {self.ann_file}')
+
+        lines = []
+        for ann_file in ann_files:
+            with open(ann_file, 'r') as f:
+                lines.extend([line.strip() for line in f.readlines()])
         for line in lines:
             src_image_path = line
             data_info = dict(
