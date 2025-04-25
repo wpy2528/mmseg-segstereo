@@ -3,7 +3,7 @@ import time
 import os
 import argparse
 import os.path as osp
-
+import random
 from mmengine.config import Config, DictAction
 from mmengine.utils import ProgressBar
 
@@ -25,6 +25,7 @@ def parse_args():
         type=float,
         default=2,
         help='the interval of show (s)')
+    parser.add_argument("--not_random", default=False, action='store_true')
     parser.add_argument(
         '--cfg-options',
         nargs='+',
@@ -55,7 +56,13 @@ def main():
     visualizer.dataset_meta = dataset.metainfo
 
     progress_bar = ProgressBar(len(dataset))
-    for item in dataset:
+
+    indexes = list(range(len(dataset)))
+    if not args.not_random:
+        random.shuffle(indexes)
+    
+    for index in indexes:
+        item = dataset[index]
         img = item['inputs'].permute(1, 2, 0).numpy()
         img = img[..., [2, 1, 0]]  # bgr to rgb
         data_sample = item['data_samples'].numpy()

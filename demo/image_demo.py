@@ -6,7 +6,7 @@ import numpy as np
 from argparse import ArgumentParser
 
 from mmengine.model import revert_sync_batchnorm
-
+from mmengine.structures import PixelData
 from mmseg.apis import inference_model, init_model, show_result_pyplot
 
 
@@ -53,6 +53,13 @@ def main():
             
     for src_image_path in tqdm(src_image_paths):
         result = inference_model(model, src_image_path)
+        gt_image_path = src_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
+        if (gt_image_path != src_image_path and os.path.exists(gt_image_path)):
+            draw_gt = True
+            gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE).astype(np.int64)[None, ...]
+            result.gt_sem_seg = PixelData(data=gt_image)
+        else:
+            draw_gt = False
         # 保存预测mask
         if args.save_pred_mask:
             mask_t = result._pred_sem_seg.data
@@ -67,7 +74,7 @@ def main():
             title=args.title,
             opacity=args.opacity,
             with_labels=args.with_labels,
-            draw_gt=False,
+            draw_gt=True,
             show=False if args.out_file is not None else True,
             out_file=os.path.join(args.out_file, os.path.basename(src_image_path)))
 
