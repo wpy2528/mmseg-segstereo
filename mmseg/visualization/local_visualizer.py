@@ -340,6 +340,8 @@ class SegLocalVisualizer(Visualizer):
             drawn_img = gt_img_data
         else:
             drawn_img = pred_img_data
+        
+        drawn_img = np.concatenate((image, drawn_img), axis=1)
 
         if show:
             self.show(drawn_img, win_name=name, wait_time=wait_time)

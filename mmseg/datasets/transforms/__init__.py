@@ -15,6 +15,10 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
                          SegRescale)
 
+from .imgaug_for_mm.resize_by_imgaug import ResizeByImgaug
+from .imgaug_for_mm.copy_paste import CopyPasteTop
+from .imgaug_for_mm.isp_stype_aug import ISPStyleAug
+from .imgaug_for_mm.concat_front_and_side import ConcatFrontAndSide
 # yapf: enable
 __all__ = [
     'LoadAnnotations', 'RandomCrop', 'BioMedical3DRandomCrop', 'SegRescale',
@@ -26,5 +30,7 @@ __all__ = [
     'BioMedical3DRandomFlip', 'BioMedicalRandomGamma', 'BioMedical3DPad',
     'RandomRotFlip', 'Albu', 'LoadSingleRSImageFromFile', 'ConcatCDInput',
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
-    'RandomFlip', 'Resize'
+    'RandomFlip', 'Resize', 
+    
+    'ResizeByImgaug', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide'
 ]

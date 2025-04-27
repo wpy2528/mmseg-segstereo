@@ -47,7 +47,7 @@ train_pipeline = [
     ),
     dict(type='RandomFlip', prob=0.5),
     dict(type='ISPStyleAug', prob=1.0),
-    dict(type='ConcatFrontAndSide', pool_size=16, prob=1.0),
+    dict(type='CopyPasteTop', pool_size=16, prob=1.0),
     dict(type='PackSegInputs')
 ]
 test_pipeline = [
