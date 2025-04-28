@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import cv2
+import numpy as np
 import time
 import os
 import argparse
@@ -26,6 +28,7 @@ def parse_args():
         default=2,
         help='the interval of show (s)')
     parser.add_argument("--not_random", default=False, action='store_true')
+    parser.add_argument("--create_augmented_dataset", default=False, action='store_true')
     parser.add_argument(
         '--cfg-options',
         nargs='+',
@@ -66,21 +69,36 @@ def main():
         img = item['inputs'].permute(1, 2, 0).numpy()
         img = img[..., [2, 1, 0]]  # bgr to rgb
         data_sample = item['data_samples'].numpy()
-        img_path = osp.basename(item['data_samples'].img_path)
+        src_image_name = osp.basename(item['data_samples'].img_path)
 
         out_file = osp.join(
             args.output_dir,
-            osp.basename(img_path)) if args.output_dir is not None else None
+            src_image_name) if args.output_dir is not None else None
 
-        visualizer.add_datasample(
-            name=osp.basename(img_path),
-            image=img,
-            data_sample=data_sample,
-            draw_gt=True,
-            draw_pred=False,
-            wait_time=args.show_interval,
-            out_file=out_file,
-            show=False)
+        if args.create_augmented_dataset:
+            src_image_np = img
+            src_image_np = src_image_np[..., ::-1]
+            src_gt_np = data_sample.gt_sem_seg.data.astype(np.uint8)[0]
+            if hasattr(dataset, "reverse_label_map"):
+                src_gt_np = np.vectorize(dataset.reverse_label_map.get)(src_gt_np)
+
+            dst_image_path = osp.join(args.output_dir, "images", src_image_name)
+            dst_gt_path = osp.join(args.output_dir, "labels", src_image_name).replace(".jpg", ".png")
+            os.makedirs(osp.dirname(dst_image_path), exist_ok=True)
+            os.makedirs(osp.dirname(dst_gt_path), exist_ok=True)
+            cv2.imwrite(dst_image_path, src_image_np)
+            cv2.imwrite(dst_gt_path, src_gt_np)
+            
+        else:
+            visualizer.add_datasample(
+                name=osp.basename(src_image_name),
+                image=img,
+                data_sample=data_sample,
+                draw_gt=True,
+                draw_pred=False,
+                wait_time=args.show_interval,
+                out_file=out_file,
+                show=False)
         progress_bar.update()
 
 

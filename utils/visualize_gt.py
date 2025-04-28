@@ -3,7 +3,7 @@ import cv2
 import argparse
 import numpy as np
 from tqdm import tqdm
-
+import random
 # 定义类别颜色
 PALETTE = np.array([
     [128, 0, 128],  # 紫色
@@ -72,9 +72,12 @@ def main():
     parser.add_argument('input', help='Input image path, directory path, or txt file path')
     parser.add_argument('output_dir', help='Output directory path')
     parser.add_argument("--concat", action="store_true", help="Concatenate images horizontally")
+    parser.add_argument("--not_random", action="store_true", help="Not random")
     args = parser.parse_args()
     # 获取所有需要处理的图像路径
     image_paths = get_image_paths(args.input)
+    if not args.not_random:
+        random.shuffle(image_paths)
     if not image_paths:
         print(f"Error: No valid images found in {args.input}")
         return

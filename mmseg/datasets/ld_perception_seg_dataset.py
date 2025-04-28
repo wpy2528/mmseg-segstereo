@@ -52,6 +52,8 @@ class LDPerceptionSegDataset(BaseSegDataset):
                 3: 2,
                 4: 0
             }
+            # 这个反向映射的作用是将移位后的泥土2还原为原来的3
+            self.reverse_label_map = {0: 0, 1: 1, 2: 3}
 
         lines = []
         for ann_file in ann_files:

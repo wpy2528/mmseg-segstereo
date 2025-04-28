@@ -130,50 +130,9 @@ if __name__ == '__main__':
     with open("data/perception_segmentation/0427/val.txt", "r") as f:
         img_paths = f.readlines()
     img_paths = [p.strip() for p in img_paths]
-
-    # 随机选择两张图片
-    img_path1, img_path2 = random.sample(img_paths, 2)
-
-    # 读取图像和对应的mask
-    img1 = cv2.imread(img_path1)
-    img2 = cv2.imread(img_path2)
+    # 随机分成两组
+    random.shuffle(img_paths)
+    img_paths1 = img_paths[:len(img_paths)//2]
+    img_paths2 = img_paths[len(img_paths)//2:]
     
-    mask_path1 = img_path1.replace("/images/", "/labels/").replace(".jpg", ".png")
-    mask_path2 = img_path2.replace("/images/", "/labels/").replace(".jpg", ".png")
     
-    mask1 = cv2.imread(mask_path1, cv2.IMREAD_GRAYSCALE)
-    mask2 = cv2.imread(mask_path2, cv2.IMREAD_GRAYSCALE)
-
-    # 创建增广器实例
-    aug = ConcatFrontAndSide(pool_size=16, prob=1.0)
-
-    # 构造测试数据并添加到池中
-    results1 = {
-        'img': img1,
-        'gt_seg_map': mask1,
-        'img_shape': img1.shape,
-        'ori_shape': img1.shape,
-        'pad_shape': img1.shape,
-        'img_path': img_path1
-    }
-    aug._add_to_pool(results1)
-    
-    results2 = {
-        'img': img2,
-        'gt_seg_map': mask2,
-        'img_shape': img2.shape,
-        'ori_shape': img2.shape,
-        'pad_shape': img2.shape,
-        'img_path': img_path2
-    }
-    aug._add_to_pool(results2)
-
-    # 执行增广并保存结果
-    augmented = aug(results2)
-    cv2.imwrite(str(test_dir / "augmented_img.jpg"), augmented['img'])
-    cv2.imwrite(str(test_dir / "augmented_mask.png"), augmented['gt_seg_map'])
-
-    print("使用的图像:")
-    print("图像1:", img_path1)
-    print("图像2:", img_path2) 
-    print("增广结果已保存到:", test_dir)
