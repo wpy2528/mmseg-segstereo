@@ -15,19 +15,14 @@ class LDPerceptionSegDataset(BaseSegDataset):
         split (str): Split txt file for LDMower.
     """
     METAINFO = dict(
-        classes=('background', 'grass', 'water', 'soil', 'animal'),
-        palette=[[128, 0, 128], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 0]]
+        classes = ('background', 'grass', 'soil'),
+        palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0]]
     )
     def __init__(self,
                  ann_file,
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
-                 seg_water_and_animal=False,
                  **kwargs) -> None:
-        self.seg_water_and_animal = seg_water_and_animal
-        if not seg_water_and_animal:
-            self.METAINFO['classes'] = ('background', 'grass', 'soil')
-            self.METAINFO['palette'] = [[128, 0, 128], [0, 255, 0], [255, 255, 0]]
         super().__init__(
             img_suffix=img_suffix,
             seg_map_suffix=seg_map_suffix,
@@ -43,17 +38,6 @@ class LDPerceptionSegDataset(BaseSegDataset):
             ann_files = [self.ann_file]
         else:
             raise ValueError(f'你这鸟玩意既不是一个文件也不是一个列表，你搁这逗我玩呢？ {self.ann_file}')
-
-        if not self.seg_water_and_animal:
-            self.label_map = {
-                0: 0,
-                1: 1,
-                2: 0,
-                3: 2,
-                4: 0
-            }
-            # 这个反向映射的作用是将移位后的泥土2还原为原来的3
-            self.reverse_label_map = {0: 0, 1: 1, 2: 3}
 
         lines = []
         for ann_file in ann_files:

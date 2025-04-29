@@ -4,15 +4,25 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 import random
-# 定义类别颜色
-PALETTE = np.array([
-    [128, 0, 128],  # 紫色
-    [0, 255, 0],    # 绿色
-    [255, 0, 0],    # 蓝色
-    [0, 255, 255],  # 黄色
-    [0, 0, 255]     # 红色
-], dtype=np.uint8)
 
+NUM_CLASSES = 3
+
+
+# 定义类别颜色
+if NUM_CLASSES == 5:
+    PALETTE = np.array([
+        [128, 0, 128],  # 紫色
+        [0, 255, 0],    # 绿色
+        [255, 0, 0],    # 蓝色
+        [0, 255, 255],  # 黄色
+        [0, 0, 255]     # 红色
+    ], dtype=np.uint8)
+elif NUM_CLASSES == 3:
+    PALETTE = np.array([
+        [128, 0, 128],  # 紫色
+        [0, 255, 0],    # 绿色
+        [0, 255, 255],  # 黄色
+    ], dtype=np.uint8)
 
 
 

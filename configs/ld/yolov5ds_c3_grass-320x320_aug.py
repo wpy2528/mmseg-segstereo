@@ -1,7 +1,7 @@
 NUM_CLASSES = 3
 BATCH_PAD_SIZE = (320, 320)
 RESIZE_SIZE = (320, 320)
-DATA_ROOT = 'data/perception_segmentation/0427'
+DATA_ROOT = 'data/perception_segmentation/0427_c3'
 
 # model settings
 norm_cfg = dict(type='SyncBN', requires_grad=True)
@@ -70,7 +70,6 @@ train_dataloader = dict(
         type=dataset_type,
         data_root=DATA_ROOT,
         ann_file='train.txt',
-        seg_water_and_animal=NUM_CLASSES == 5,
         pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=16,
@@ -81,7 +80,6 @@ val_dataloader = dict(
         type=dataset_type,
         data_root=DATA_ROOT,
         ann_file='val_concat.txt',
-        seg_water_and_animal=NUM_CLASSES == 5,
         pipeline=test_pipeline))
 test_dataloader = val_dataloader
 
