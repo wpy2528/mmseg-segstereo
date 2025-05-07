@@ -68,8 +68,8 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
-        data_root=DATA_ROOT,
-        ann_file='train.txt',
+        data_root="/home/mck/datasets/grass_seg_data_c3_reassigned/train/",
+        # ann_file='train.txt',
         pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=16,
@@ -78,8 +78,8 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root=DATA_ROOT,
-        ann_file='val_concat.txt',
+        data_root="/home/mck/datasets/grass_seg_data_c3_reassigned/val/",
+        # ann_file='val_concat.txt',
         pipeline=test_pipeline))
 test_dataloader = val_dataloader
 

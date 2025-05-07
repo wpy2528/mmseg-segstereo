@@ -10,16 +10,6 @@ from mmengine.runner import Runner
 
 from mmseg.registry import RUNNERS
 
-def get_freer_gpu():
-    '''
-    获取当前最闲的GPU的编号
-    :return:
-    '''
-    import os
-    import numpy as np
-    std_output = os.popen('nvidia-smi -q -d Memory |grep -A4 GPU|grep Used')._stream.readlines()
-    memory_used = [int(x.split()[2]) for x in std_output]
-    return int(np.argmin(memory_used))
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a segmentor')
