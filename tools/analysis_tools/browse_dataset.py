@@ -79,8 +79,8 @@ def main():
             src_image_np = img
             src_image_np = src_image_np[..., ::-1]
             src_gt_np = data_sample.gt_sem_seg.data.astype(np.uint8)[0]
-            if hasattr(dataset, "reverse_label_map"):
-                src_gt_np = np.vectorize(dataset.reverse_label_map.get)(src_gt_np)
+            # if hasattr(dataset, "reverse_label_map"):
+            #     src_gt_np = np.vectorize(dataset.reverse_label_map.get)(src_gt_np)
 
             dst_image_path = osp.join(args.output_dir, "images", src_image_name)
             dst_gt_path = osp.join(args.output_dir, "labels", src_image_name).replace(".jpg", ".png")

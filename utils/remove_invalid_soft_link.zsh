@@ -1,0 +1,1 @@
+find /home/mck/datasets/grass_seg_data_c3_reassigned -type l -xtype l -delete

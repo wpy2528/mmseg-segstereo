@@ -110,5 +110,7 @@ def main():
         
         vis_np = visualize_segmentation(image_path, seg_path, args.concat)
         cv2.imwrite(output_path, vis_np)
+    
+    print(os.path.realpath(args.output_dir))
 if __name__ == "__main__":
     main() 

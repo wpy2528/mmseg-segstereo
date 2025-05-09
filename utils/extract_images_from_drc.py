@@ -73,9 +73,9 @@ def extract_images_from_drc(file_path: str) -> Generator[Tuple[np.ndarray, str],
 
             # 读取 data 段
             data = f.read(real_len)
-            if len(data) < real_len:
-                print("⚠️ 文件中 data 长度不足，提前结束")
-                break
+            # if len(data) < real_len:
+            #     print("⚠️ 文件中 data 长度不足，提前结束")
+            #     break
 
             # === 感知结果解析 ===
             if data_type == 7:

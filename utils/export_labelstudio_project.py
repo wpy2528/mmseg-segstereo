@@ -5,7 +5,7 @@ import requests
 import sys
 from datetime import datetime
 
-from parse_labelstudio_anno import parse_labelstudio_to_voc
+from parse_labelstudio_anno import parse_labelstudio_to_coco
 
 # ---------------------------
 # 配置（可根据实际情况修改）
@@ -65,7 +65,7 @@ def main():
         data = export_project_annotations(project_id)
         dst_anno_path = os.path.join(dst_dataset_dir, f"{project_name}.json")
         labelstudio_jd = json.loads(data)
-        parse_labelstudio_to_voc(labelstudio_jd, dst_dataset_dir)
+        parse_labelstudio_to_coco(labelstudio_jd, dst_dataset_dir)
     except requests.HTTPError as e:
         print(f"❌ 网络请求失败: {e.response.status_code} - {e.response.text}")
     except Exception as e:

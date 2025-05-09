@@ -38,14 +38,14 @@ def link_files(src_image_dir, dst_dataset_dir):
                 print(f"[SKIP] Destination already exists and is not the correct symlink: {dst_image_path}")
                 continue
         dst_image_path.symlink_to(src_image_path)
-        print(f"[OK] Linked: {dst_image_path} -> {src_image_path}")
+        # print(f"[OK] Linked: {dst_image_path} -> {src_image_path}")
         src_label_path = str(src_image_path).replace("/images/", "/labels/").replace(".jpg", ".png")
         dst_label_path = str(dst_image_path).replace("/images/", "/labels/").replace(".jpg", ".png")
         src_label_path = Path(src_label_path)
         dst_label_path = Path(dst_label_path)
         dst_label_path.parent.mkdir(parents=True, exist_ok=True)
         dst_label_path.symlink_to(src_label_path)
-        print(f"[OK] Linked: {dst_label_path} -> {src_label_path}")
+        # print(f"[OK] Linked: {dst_label_path} -> {src_label_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Link listed files to target directory while preserving structure.")
