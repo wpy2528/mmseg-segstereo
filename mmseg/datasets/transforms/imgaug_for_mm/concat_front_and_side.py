@@ -40,9 +40,20 @@ class ConcatFrontAndSide(BaseTransform):
         side_idx = random.randint(0, len(self.pool) - 1)
         side_entry = self.pool[side_idx]
         side_img = side_entry['img']
+        
+        self._replace_in_pool(results, side_idx)
 
         # 执行拼接
-        new_img = self.concat_front_and_side_images(front_image=img, side_image=side_img, dst_size=dst_size)
+        # 随机生成一个上图（侧目）的占比
+        upper_height_proportion = np.random.uniform(1.0 / 3, 1.0 / 3 + 2.0 / 10)
+        # 随机生成一个上图（侧目）的裁切位置
+        src_upper_tly_proportion = 1 - upper_height_proportion
+        # 随机生成一个下图（正视）的裁切位置
+        src_lower_tly_proportion = 1.0 / 3
+        new_img = self.concat_front_and_side_images(front_image=img, side_image=side_img, dst_size=dst_size, 
+                                                    upper_height_proportion=upper_height_proportion,
+                                                    src_upper_tly_proportion=src_upper_tly_proportion,
+                                                    src_lower_tly_proportion=src_lower_tly_proportion)
         results['img'] = new_img
 
         # 同步处理 segmentation
@@ -51,23 +62,24 @@ class ConcatFrontAndSide(BaseTransform):
             side_seg = side_entry['gt_seg_map']
             new_seg = self.concat_front_and_side_images(front_image=front_seg[..., np.newaxis],
                                                         side_image=side_seg[..., np.newaxis],
-                                                        dst_size=dst_size)
+                                                        dst_size=dst_size,
+                                                        upper_height_proportion=upper_height_proportion,
+                                                        src_upper_tly_proportion=src_upper_tly_proportion,
+                                                        src_lower_tly_proportion=src_lower_tly_proportion)
             results['gt_seg_map'] = new_seg.squeeze(-1)
 
-        # 更新池子（替换掉刚才用的）
-        self._replace_in_pool(results, side_idx)
 
         return results
 
-    def concat_front_and_side_images(self, front_image, side_image, dst_size):
+    def concat_front_and_side_images(self, front_image, side_image, dst_size, 
+                                     upper_height_proportion, src_upper_tly_proportion, src_lower_tly_proportion):
         """实现具体拼接逻辑"""
         dst_image = np.zeros((dst_size[1], dst_size[0], front_image.shape[2]), dtype=front_image.dtype)
 
-        upper_height_proportion = 1.0 / 3 + 1.0 / 10  # 大约43%
-        src_upper_tly = round(side_image.shape[0] * (1.0 - upper_height_proportion))
+        src_upper_tly = round(side_image.shape[0] * src_upper_tly_proportion)
         src_upper_height = round(side_image.shape[0] * upper_height_proportion)
 
-        src_lower_tly = round(front_image.shape[0] * 1.0 / 3)
+        src_lower_tly = round(front_image.shape[0] * src_lower_tly_proportion)
         src_lower_height = round(front_image.shape[0] * (1.0 - upper_height_proportion))
 
         # 防止超界

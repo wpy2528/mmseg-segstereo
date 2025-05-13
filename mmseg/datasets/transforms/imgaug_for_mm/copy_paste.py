@@ -24,6 +24,12 @@ class CopyPasteTop(BaseTransform):
         h, w = img.shape[:2]
         third = h // 3
 
+        # 更新图池：
+        current_copy = {
+            'img': img.copy(),
+            'gt_seg_map': results.get('gt_seg_map', None).copy() if 'gt_seg_map' in results else None
+        }
+
         if third == 0:
             return results  # 图太小
 
@@ -55,11 +61,7 @@ class CopyPasteTop(BaseTransform):
                 seg[0:third] = c_seg
                 results['gt_seg_map'] = seg
 
-        # 更新图池：
-        current_copy = {
-            'img': img.copy(),
-            'gt_seg_map': results.get('gt_seg_map', None).copy() if 'gt_seg_map' in results else None
-        }
+
 
         if len(self.pool) < self.pool_size:
             self.pool.append(current_copy)
