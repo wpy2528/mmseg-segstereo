@@ -1,7 +1,6 @@
 NUM_CLASSES = 3
 BATCH_PAD_SIZE = (320, 320)
 RESIZE_SIZE = (320, 320)
-DATA_ROOT = 'data/perception_segmentation/0427_c3'
 
 # model settings
 norm_cfg = dict(type='SyncBN', requires_grad=True)
@@ -47,7 +46,7 @@ train_pipeline = [
     ),
     dict(type='RandomFlip', prob=0.5),
     dict(type='ISPStyleAug', prob=0.9),
-    dict(type='CopyPasteTop', pool_size=16, prob=1.0),
+    dict(type='ConcatFrontAndSide', pool_size=16, prob=1.0),
     dict(type='PackSegInputs')
 ]
 test_pipeline = [
@@ -78,7 +77,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root="/home/mck/datasets/grass_seg_data_c3_reassigned/val/",
+        data_root="/home/mck/datasets/grass_seg_data_c3_reassigned/val_concat/",
         # ann_file='val_concat.txt',
         pipeline=test_pipeline))
 test_dataloader = val_dataloader

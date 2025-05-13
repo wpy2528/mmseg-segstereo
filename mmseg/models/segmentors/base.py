@@ -96,6 +96,9 @@ class BaseSegmentor(BaseModel, metaclass=ABCMeta):
             return self.predict(inputs, data_samples)
         elif mode == 'tensor':
             return self._forward(inputs, data_samples)
+        elif mode == 'export_for_nb':
+            output = self._forward(inputs, data_samples)
+            return output.permute(0, 2, 3, 1) # 将类别轴放到最后方便推理时缓存命中
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')

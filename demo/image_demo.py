@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 from argparse import ArgumentParser
-
+import glob
 from mmengine.model import revert_sync_batchnorm
 from mmengine.structures import PixelData
 from mmseg.apis import inference_model, init_model, show_result_pyplot
@@ -50,6 +50,8 @@ def main():
     if args.img.endswith(".txt"):
         with open(args.img, "r") as f:
             src_image_paths = [line.strip() for line in f.readlines()]
+    elif os.path.isdir(args.img):
+        src_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True)
             
     for src_image_path in tqdm(src_image_paths):
         result = inference_model(model, src_image_path)

@@ -1,7 +1,6 @@
 NUM_CLASSES = 3
 BATCH_PAD_SIZE = (320, 320)
 RESIZE_SIZE = (320, 320)
-DATA_ROOT = 'data/perception_segmentation/0427_c3'
 
 # model settings
 norm_cfg = dict(type='SyncBN', requires_grad=True)
