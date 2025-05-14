@@ -392,7 +392,7 @@ class STDCContextPathNet(BaseModule):
         self.align_corners = align_corners
 
     def forward(self, x):
-        outs = list(self.backbone(x))
+        outs = list(self.backbone(x)) # stage 3 4 5
         avg = F.adaptive_avg_pool2d(outs[-1], 1)
         avg_feat = self.conv_avg(avg)
 
