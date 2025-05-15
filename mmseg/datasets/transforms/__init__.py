@@ -19,6 +19,7 @@ from .imgaug_for_mm.resize_by_imgaug import ResizeByImgaug
 from .imgaug_for_mm.copy_paste import CopyPasteTop
 from .imgaug_for_mm.isp_stype_aug import ISPStyleAug
 from .imgaug_for_mm.concat_front_and_side import ConcatFrontAndSide
+from .imgaug_for_mm.crop import CropTop
 # yapf: enable
 __all__ = [
     'LoadAnnotations', 'RandomCrop', 'BioMedical3DRandomCrop', 'SegRescale',
@@ -32,5 +33,5 @@ __all__ = [
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
     
-    'ResizeByImgaug', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide'
+    'ResizeByImgaug', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop'
 ]

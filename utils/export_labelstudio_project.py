@@ -53,23 +53,18 @@ def main():
                 print("👋 退出")
                 sys.exit(1)
 
-    try:
-        print("🔍 获取项目列表...")
-        projects = get_all_projects()
-        project_id = get_project_id_by_name(projects, project_name)
-        if not project_id:
-            print(f"❌ 找不到项目：{project_name}")
-            sys.exit(1)
+    print("🔍 获取项目列表...")
+    projects = get_all_projects()
+    project_id = get_project_id_by_name(projects, project_name)
+    if not project_id:
+        print(f"❌ 找不到项目：{project_name}")
+        sys.exit(1)
 
-        print(f"📦 正在导出项目（ID: {project_id}）的标注...")
-        data = export_project_annotations(project_id)
-        dst_anno_path = os.path.join(dst_dataset_dir, f"{project_name}.json")
-        labelstudio_jd = json.loads(data)
-        parse_labelstudio_to_coco(labelstudio_jd, dst_dataset_dir)
-    except requests.HTTPError as e:
-        print(f"❌ 网络请求失败: {e.response.status_code} - {e.response.text}")
-    except Exception as e:
-        print(f"❌ 程序出错: {str(e)}")
+    print(f"📦 正在导出项目（ID: {project_id}）的标注...")
+    data = export_project_annotations(project_id)
+    dst_anno_path = os.path.join(dst_dataset_dir, f"{project_name}.json")
+    labelstudio_jd = json.loads(data)
+    parse_labelstudio_to_coco(labelstudio_jd, dst_dataset_dir)
 
 if __name__ == "__main__":
     main()

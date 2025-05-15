@@ -5,10 +5,12 @@ import os
 import os.path as osp
 
 import mmengine.fileio as fileio
+from typing import List
+
+from mmengine.logging import MMLogger, print_log
 
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseSegDataset
-from typing import Callable, Dict, List
 
 @DATASETS.register_module()
 class LDPerceptionSegDataset(BaseSegDataset):
@@ -53,6 +55,18 @@ class LDPerceptionSegDataset(BaseSegDataset):
             assert os.path.isdir(self.data_root), self.data_root
             lines = glob.glob(os.path.join(self.data_root, "**", "images", "*.jpg"), recursive=True)
                     
+        src_log_path = MMLogger.get_current_instance().log_file
+        if src_log_path is not None:
+            if self.test_mode:
+                src_dataset_log_path = os.path.join(os.path.dirname(src_log_path), f"val_samples.txt")
+                print_log(f"测试集 样本路径写入到 {src_dataset_log_path} 中", logger="current")
+            else:
+                src_dataset_log_path = os.path.join(os.path.dirname(src_log_path), f"train_samples.txt")
+                print_log(f"训练集 样本路径写入到 {src_dataset_log_path} 中", logger="current")
+            f = open(src_dataset_log_path, "w")
+            for line in lines:
+                f.write(line + "\n")
+            f.close()
         for line in lines:
             src_image_path = line
             data_info = dict(
@@ -63,6 +77,9 @@ class LDPerceptionSegDataset(BaseSegDataset):
             data_info['seg_fields'] = []
             data_list.append(data_info)
         
-        print(f"加载了{len(data_list)}条数据")
+        if self.test_mode:
+            print_log(f"测试集 共计 {len(data_list)} 个样本", logger="current")
+        else:
+            print_log(f"训练集 共计 {len(data_list)} 个样本", logger="current")
         time.sleep(1)
         return data_list

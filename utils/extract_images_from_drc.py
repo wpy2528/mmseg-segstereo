@@ -11,6 +11,21 @@ import re
 from datetime import datetime, timedelta
 from typing import Generator, Tuple
 
+import patoolib
+
+def extract_file(src_zip_path, dst_dir):
+    """
+    解压缩文件到指定目录
+    :param src_zip_path: 压缩文件路径
+    :param dst_dir: 解压目标目录
+    """
+    os.makedirs(dst_dir, exist_ok=True)
+    try:
+        patoolib.extract_archive(str(src_zip_path), outdir=str(dst_dir))
+        print(f"[ok] 已解压: {src_zip_path} -> {dst_dir}")
+    except patoolib.util.PatoolError as e:
+        print(f"[ERR] 解压失败 {src_zip_path}: {e}")
+
 def get_time_str_local(timestamp_ms: int) -> str:
     # 将毫秒时间戳转为 datetime（本地时区）
     dt = datetime.fromtimestamp(timestamp_ms / 1000.0)
@@ -115,7 +130,10 @@ def process_drc_files(src_path: str, save_dir: str):
     if os.path.isfile(src_path):
         drc_paths = [src_path]
     else:
-        drc_paths = glob.glob(os.path.join(src_path, "**", "*.drc"), recursive=True)
+        drc_zip_paths = glob.glob(os.path.join(src_path, "**", "*.drc.zip"), recursive=True)
+    for drc_zip_path in drc_zip_paths:
+        extract_file(drc_zip_path, os.path.dirname(drc_zip_path))
+    drc_paths = glob.glob(os.path.join(src_path, "**", "*.drc"), recursive=True)
     if not drc_paths:
         print(f"⚠️ 没有找到drc文件: {src_path}")
         return
