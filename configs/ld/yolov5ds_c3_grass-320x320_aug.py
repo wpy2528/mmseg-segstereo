@@ -1,6 +1,6 @@
 NUM_CLASSES = 3
-BATCH_PAD_SIZE = (320, 320)
-RESIZE_SIZE = (320, 320)
+BATCH_PAD_HW = (320, 320)
+RESIZE_WH = (320, 320)
 DATA_ROOT = 'data/perception_segmentation/0427_c3'
 
 # model settings
@@ -9,7 +9,7 @@ data_preprocessor = dict(
     type='SegDataPreProcessor',
     mean=[0. ,0., 0.],
     std=[255., 255., 255.],
-    size=BATCH_PAD_SIZE,
+    size=BATCH_PAD_HW,
     bgr_to_rgb=True,
     pad_val=0,
     seg_pad_val=255)
@@ -42,7 +42,7 @@ train_pipeline = [
     dict(type='LoadAnnotations'),
     dict(
         type='Resize',
-        scale=RESIZE_SIZE,
+        scale=RESIZE_WH,
         keep_ratio=False
     ),
     dict(type='RandomFlip', prob=0.5),
@@ -54,7 +54,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='Resize',
-        scale=RESIZE_SIZE,
+        scale=RESIZE_WH,
         keep_ratio=False
     ),
     dict(type='LoadAnnotations'),

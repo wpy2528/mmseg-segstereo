@@ -1,7 +1,8 @@
 # ===== Global Constants =====
 NUM_CLASSES = 3
-RESIZE_SIZE = (321, 321)
-BATCH_PAD_SIZE = (321, 321)
+CROP_TOP_PROPORTION = 0.1
+RESIZE_WH = (320, 320)
+BATCH_PAD_HW = (int(320 * (1 - CROP_TOP_PROPORTION)), 320)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -9,7 +10,7 @@ data_preprocessor = dict(
     type='SegDataPreProcessor',
     mean=[0.0, 0.0, 0.0],
     std=[255.0, 255.0, 255.0],
-    size=BATCH_PAD_SIZE,
+    size=BATCH_PAD_HW,
     bgr_to_rgb=True,
     pad_val=0,
     seg_pad_val=255
@@ -111,18 +112,19 @@ train_pipeline = [
     dict(type='LoadAnnotations'),
     dict(
         type='Resize',
-        scale=RESIZE_SIZE,
+        scale=RESIZE_WH,
         keep_ratio=False
     ),
     dict(type='RandomFlip', prob=0.5),
     dict(type='ISPStyleAug', prob=0.9),
-    dict(type='CopyPasteTop', pool_size=16, prob=1.0),
+    dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
     dict(type='PackSegInputs')
 ]
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=RESIZE_SIZE, keep_ratio=False),
+    dict(type='Resize', scale=RESIZE_WH, keep_ratio=False),
+    dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
     dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
@@ -135,7 +137,8 @@ train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/train/',
-        pipeline=train_pipeline
+        pipeline=train_pipeline,
+        test_mode=False
     )
 )
 
@@ -146,8 +149,9 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val_concat/',
-        pipeline=test_pipeline
+        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val/',
+        pipeline=test_pipeline,
+        test_mode=True
     )
 )
 
