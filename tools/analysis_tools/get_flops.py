@@ -84,17 +84,17 @@ def inference(args: argparse.Namespace, logger: MMLogger) -> dict:
         # TODO: Support MaskFormer and Mask2Former
         raise NotImplementedError('MaskFormer and Mask2Former are not '
                                   'supported yet.')
-    print(data['inputs'].shape)
-    outputs = get_model_complexity_info(
-        model,
-        input_shape=None,
-        inputs=data['inputs'],
-        show_table=False,
-        show_arch=False)
-    result['flops'] = _format_size(outputs['flops'])
-    result['params'] = _format_size(outputs['params'])
-    result['compute_type'] = 'direct: randomly generate a picture'
-    return result
+
+
+    from thop import profile
+    from copy import deepcopy
+    n_p = sum(x.numel() for x in model.parameters())  # number parameters
+    n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
+    img = torch.zeros(data['inputs'].shape, device=next(model.parameters()).device)
+    flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0] / 1E9 * 2
+    fs = ', %.1f GFLOPs' % flops
+
+    print(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs} under input size {data['inputs'].shape}")
 
 
 def main():
@@ -102,24 +102,7 @@ def main():
     args = parse_args()
     logger = MMLogger.get_instance(name='MMLogger')
 
-    result = inference(args, logger)
-    split_line = '=' * 30
-    ori_shape = result['ori_shape']
-    pad_shape = result['pad_shape']
-    flops = result['flops']
-    params = result['params']
-    compute_type = result['compute_type']
-
-    if pad_shape != ori_shape:
-        print(f'{split_line}\nUse size divisor set input shape '
-              f'from {ori_shape} to {pad_shape}')
-    print(f'{split_line}\nCompute type: {compute_type}\n'
-          f'Input shape: {pad_shape}\nFlops: {flops}\n'
-          f'Params: {params}\n{split_line}')
-    print('!!!Please be cautious if you use the results in papers. '
-          'You may need to check if all ops are supported and verify '
-          'that the flops computation is correct.')
-
+    inference(args, logger)
 
 if __name__ == '__main__':
     main()
