@@ -123,8 +123,8 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=RESIZE_WH, keep_ratio=False),
-    dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
+    # dict(type='Resize', scale=RESIZE_WH, keep_ratio=False),
+    # dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
     dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
@@ -149,7 +149,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val/',
+        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val_croptop/',
         pipeline=test_pipeline,
         test_mode=True
     )

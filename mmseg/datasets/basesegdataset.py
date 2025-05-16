@@ -135,6 +135,20 @@ class BaseSegDataset(BaseDataset):
         if self.data_root is not None:
             self._join_prefix()
 
+        # 对pipeline进行合规检查
+        if self.test_mode:
+            # ! 注意在测试模式下，pipeline中不能包含修改GT的操作，也不能包含裁切原始图像的操作。因为mmseg的测试流程中会把pred resize回原始图像尺寸，而GT不会执行任何操作。
+            # ! 因此测试pipeline中只能包含 LoadImageFromFile 和 LoadAnnotations 和 PackSegInputs
+            # ! 同时LoadAnnotations和PackSegInputs必须是最后两个操作
+            for op in pipeline:
+                if op["type"] in ['LoadImageFromFile', 'Resize', 'LoadAnnotations', 'PackSegInputs']:
+                    continue
+                else:
+                    raise ValueError(f'{op["type"]} is not allowed in test pipeline')
+            # 检查LoadAnnotations和PackSegInputs是否是最后两个操作
+            if pipeline[-2]["type"] != 'LoadAnnotations' or pipeline[-1]["type"] != 'PackSegInputs':
+                raise ValueError('LoadAnnotations and PackSegInputs must be the last two operations in test pipeline')
+        
         # Build pipeline.
         self.pipeline = Compose(pipeline)
         # Full initialize the dataset.

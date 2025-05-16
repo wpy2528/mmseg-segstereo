@@ -50,6 +50,7 @@ class CropTop(BaseTransform):
             results['gt_seg_map'] = gt_seg_map
 
         results['img'] = img
+        results['img_shape'] = img.shape[:2]
         return results
 
     def __repr__(self):
