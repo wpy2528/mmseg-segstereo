@@ -8,7 +8,19 @@ import glob
 from mmengine.model import revert_sync_batchnorm
 from mmengine.structures import PixelData
 from mmseg.apis import inference_model, init_model, show_result_pyplot
+from flask import Flask, request, jsonify, send_file
+from io import BytesIO
 
+def get_color_mask(mask):
+    color_mask = np.zeros_like(mask, dtype=np.uint8)
+    color_mask = cv2.cvtColor(color_mask, cv2.COLOR_GRAY2BGR)
+    color_mask[mask == 0] = (255, 0, 255)
+    color_mask[mask == 1] = (0, 255, 0)
+    color_mask[mask == 2] = (255, 0, 0)
+    color_mask[mask == 3] = (0, 255, 255)
+    color_mask[mask == 4] = (0, 0, 255)
+    return color_mask
+    
 
 def main():
     parser = ArgumentParser()
@@ -24,6 +36,11 @@ def main():
         type=float,
         default=0.5,
         help='Opacity of painted segmentation map. In (0, 1] range.')
+    parser.add_argument(
+        '--server',
+        action='store_true',
+        default=False,
+        help='Whether to use server mode')
     parser.add_argument(
         '--with-labels',
         action='store_true',
@@ -45,6 +62,35 @@ def main():
     model = init_model(args.config, args.checkpoint, device=args.device)
     if args.device == 'cpu':
         model = revert_sync_batchnorm(model)
+    
+    # 服务模式
+    if args.server:
+        app = Flask(__name__)
+        
+        @app.route('/infer', methods=['POST'])
+        def infer():
+            if 'image' not in request.files:
+                return {'error': 'No image uploaded'}, 400
+
+            file = request.files['image']
+            file_bytes = file.read()
+            np_arr = np.frombuffer(file_bytes, np.uint8)
+            src_image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if src_image_np is None:
+                return {'error': 'Invalid image'}, 400
+
+            result = inference_model(model, src_image_np)
+            mask_t = result._pred_sem_seg.data
+            mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
+
+            vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
+            mask_np = cv2.cvtColor(mask_np, cv2.COLOR_GRAY2BGR)
+            res = np.hstack([src_image_np, vis, mask_np])
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(BytesIO(buffer.tobytes()), mimetype='image/png')
+            
+        app.run(host='0.0.0.0', port=5000)
+        return
     
     src_image_paths = [args.img]
     if args.img.endswith(".txt"):
