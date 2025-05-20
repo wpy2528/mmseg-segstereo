@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import sys
 import glob
 import time
 import os
@@ -56,7 +57,8 @@ class LDPerceptionSegDataset(BaseSegDataset):
             lines = glob.glob(os.path.join(self.data_root, "**", "images", "*.jpg"), recursive=True)
                     
         src_log_path = MMLogger.get_current_instance().log_file
-        if src_log_path is not None:
+        # 如果当前是调试模式，则不写入样本路径
+        if src_log_path is not None and not sys.gettrace():
             if self.test_mode:
                 src_dataset_log_path = os.path.join(os.path.dirname(src_log_path), f"val_samples.txt")
                 print_log(f"测试集 样本路径写入到 {src_dataset_log_path} 中", logger="current")
@@ -67,6 +69,7 @@ class LDPerceptionSegDataset(BaseSegDataset):
             for line in lines:
                 f.write(line + "\n")
             f.close()
+            
         for line in lines:
             src_image_path = line
             data_info = dict(

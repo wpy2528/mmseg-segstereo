@@ -1,8 +1,6 @@
 # ===== Global Constants =====
 NUM_CLASSES = 3
-CROP_TOP_PROPORTION = 0.1
-RESIZE_WH = (320, 320)
-BATCH_PAD_HW = (int(320 * (1 - CROP_TOP_PROPORTION)), 320)
+BATCH_PAD_HW = (272, 320)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -110,21 +108,14 @@ dataset_type = 'LDPerceptionSegDataset'
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations'),
-    dict(
-        type='Resize',
-        scale=RESIZE_WH,
-        keep_ratio=False
-    ),
+    dict(type='ResizeToFrontOrSideImageOriginalSize'),
     dict(type='RandomFlip', prob=0.5),
     dict(type='ISPStyleAug', prob=0.9),
-    dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
     dict(type='PackSegInputs')
 ]
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=RESIZE_WH, keep_ratio=False),
-    dict(type='CropTop', prop=CROP_TOP_PROPORTION, prob=1.0),
     dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
@@ -134,6 +125,7 @@ train_dataloader = dict(
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
+    batch_sampler=dict(type='AspectRatioBatchSampler'),
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/train/',

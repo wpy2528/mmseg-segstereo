@@ -109,7 +109,14 @@ dataset_type = 'LDPerceptionSegDataset'
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations'),
-    dict(type='ResizeToFrontOrSideImageOriginalSize'),
+    dict(
+        type='Resize',
+        scale=RESIZE_WH,
+        keep_ratio=False
+    ),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='ISPStyleAug', prob=0.9),
+    dict(type='CopyPasteTop', pool_size=16, prob=1.0),
     dict(type='PackSegInputs')
 ]
 
@@ -140,7 +147,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/train/',
+        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val_concat/',
         pipeline=test_pipeline,
         test_mode=True
     )

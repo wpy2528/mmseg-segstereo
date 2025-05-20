@@ -47,6 +47,7 @@ def main():
     args = parse_args()
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
+        args.output_dir = args.output_dir.rstrip("/")
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
@@ -64,12 +65,14 @@ def main():
     if not args.not_random:
         random.shuffle(indexes)
     
+    dataset.data_root = dataset.data_root.rstrip("/")
     for index in indexes:
         item = dataset[index]
         img = item['inputs'].permute(1, 2, 0).numpy()
         img = img[..., [2, 1, 0]]  # bgr to rgb
         data_sample = item['data_samples'].numpy()
-        src_image_name = osp.basename(item['data_samples'].img_path)
+        src_image_path = item['data_samples'].img_path
+        src_image_name = osp.basename(src_image_path)
 
         out_file = osp.join(
             args.output_dir,
@@ -82,8 +85,10 @@ def main():
             # if hasattr(dataset, "reverse_label_map"):
             #     src_gt_np = np.vectorize(dataset.reverse_label_map.get)(src_gt_np)
 
-            dst_image_path = osp.join(args.output_dir, "images", src_image_name)
-            dst_gt_path = osp.join(args.output_dir, "labels", src_image_name).replace(".jpg", ".png")
+            assert dataset.data_root in src_image_path, src_image_path
+            dst_image_path = src_image_path.replace(dataset.data_root, args.output_dir)
+            assert "/images/" in dst_image_path and ".jpg" in dst_image_path, dst_image_path
+            dst_gt_path = dst_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
             os.makedirs(osp.dirname(dst_image_path), exist_ok=True)
             os.makedirs(osp.dirname(dst_gt_path), exist_ok=True)
             cv2.imwrite(dst_image_path, src_image_np)
