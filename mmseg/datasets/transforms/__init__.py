@@ -15,7 +15,7 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
                          SegRescale)
 
-from .imgaug_for_mm.resize_by_imgaug import ResizeByImgaug
+from .imgaug_for_mm.resize_to_front_or_side_camera_original_size import ResizeToFrontOrSideImageOriginalSize
 from .imgaug_for_mm.copy_paste import CopyPasteTop
 from .imgaug_for_mm.isp_stype_aug import ISPStyleAug
 from .imgaug_for_mm.concat_front_and_side import ConcatFrontAndSide
@@ -33,5 +33,5 @@ __all__ = [
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
     
-    'ResizeByImgaug', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop'
+    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop'
 ]
