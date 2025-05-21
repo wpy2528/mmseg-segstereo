@@ -37,7 +37,7 @@ class LDPerceptionSegDataset(BaseSegDataset):
             data_root=data_root,
             **kwargs)
 
-    # 加载yolo风格的数据集
+    # 加载coco风格的数据集
     def load_data_list(self) -> List[dict]:
         data_list = []
         lines = []

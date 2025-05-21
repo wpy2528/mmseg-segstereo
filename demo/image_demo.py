@@ -16,11 +16,39 @@ def get_color_mask(mask):
     color_mask = cv2.cvtColor(color_mask, cv2.COLOR_GRAY2BGR)
     color_mask[mask == 0] = (255, 0, 255)
     color_mask[mask == 1] = (0, 255, 0)
-    color_mask[mask == 2] = (255, 0, 0)
+    # color_mask[mask == 2] = (255, 0, 0)
+    color_mask[mask == 2] = (0, 255, 255)
     color_mask[mask == 3] = (0, 255, 255)
     color_mask[mask == 4] = (0, 0, 255)
     return color_mask
-    
+
+
+def infer_image(model, src_image_path, src_image_np, args):
+    result = inference_model(model, src_image_np)
+    gt_image_path = src_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
+    if (gt_image_path != src_image_path and os.path.exists(gt_image_path)):
+        draw_gt = True
+        gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE).astype(np.int64)[None, ...]
+        result.gt_sem_seg = PixelData(data=gt_image)
+    else:
+        draw_gt = False
+    # 保存预测mask
+    if args.save_pred_mask:
+        mask_t = result._pred_sem_seg.data
+        mask_np = mask_t.cpu().numpy()
+        mask_np = mask_t.astype(np.uint8)
+        cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", "_mask.png")), mask_np)
+
+    mask_t = result._pred_sem_seg.data
+    mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
+
+    vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
+    mask_np = cv2.cvtColor(mask_np, cv2.COLOR_GRAY2BGR)
+    res = np.hstack([src_image_np, vis, mask_np])
+    if draw_gt:
+        res = np.hstack([res, gt_image])
+    cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", ".png")), res)
+
 
 def main():
     parser = ArgumentParser()
@@ -100,31 +128,25 @@ def main():
         src_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True)
             
     for src_image_path in tqdm(src_image_paths):
-        result = inference_model(model, src_image_path)
-        gt_image_path = src_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
-        if (gt_image_path != src_image_path and os.path.exists(gt_image_path)):
-            draw_gt = True
-            gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE).astype(np.int64)[None, ...]
-            result.gt_sem_seg = PixelData(data=gt_image)
+        src_image_np = cv2.imread(src_image_path)
+        src_image_name = os.path.splitext(os.path.basename(src_image_path))[0]
+        if src_image_np.shape[1] in [2880, 960]:
+            # 横着分9份
+            src_image_np_patches = []
+            if src_image_np.shape[1] == 2880:
+                for i in range(9):
+                    src_image_np_patches.append(src_image_np[:, i*src_image_np.shape[1]//9:(i+1)*src_image_np.shape[1]//9, :])
+                front_left, side_left, side_right = src_image_np_patches[0], src_image_np_patches[3], src_image_np_patches[4]
+            else:
+                for i in range(3):
+                    for j in range(3):
+                        src_image_np_patches.append(src_image_np[i*src_image_np.shape[0]//3:(i+1)*src_image_np.shape[0]//3, j*src_image_np.shape[1]//3:(j+1)*src_image_np.shape[1]//3, :])
+                front_left, side_left, side_right = src_image_np_patches[0], src_image_np_patches[3], src_image_np_patches[4]
+            infer_image(model, src_image_name + "_front_left.jpg", front_left, args)
+            infer_image(model, src_image_name + "_side_left.jpg", side_left, args)
+            infer_image(model, src_image_name + "_side_right.jpg", side_right, args)
         else:
-            draw_gt = False
-        # 保存预测mask
-        if args.save_pred_mask:
-            mask_t = result._pred_sem_seg.data
-            mask_np = mask_t.cpu().numpy()
-            mask_np = mask_t.astype(np.uint8)
-            cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", ".png")), mask_np)
-        # show the results
-        show_result_pyplot(
-            model,
-            src_image_path,
-            result,
-            title=args.title,
-            opacity=args.opacity,
-            with_labels=args.with_labels,
-            draw_gt=True,
-            show=False if args.out_file is not None else True,
-            out_file=os.path.join(args.out_file, os.path.basename(src_image_path)))
+            infer_image(model, src_image_path, src_image_np, args)
 
 if __name__ == '__main__':
     main()

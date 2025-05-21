@@ -95,7 +95,9 @@ class BaseSegmentor(BaseModel, metaclass=ABCMeta):
         elif mode == 'predict':
             return self.predict(inputs, data_samples)
         elif mode == 'tensor':
-            return self._forward(inputs, data_samples)
+            r = self._forward(inputs, data_samples)
+            r = r.permute(0, 2, 3, 1)
+            return r
         elif mode == 'export_for_nb':
             if data_samples is not None:
                 batch_img_metas = [

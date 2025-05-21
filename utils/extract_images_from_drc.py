@@ -124,7 +124,7 @@ def extract_images_from_drc(file_path: str) -> Generator[Tuple[np.ndarray, str],
 
             index += 1
 
-def process_drc_files(src_path: str, save_dir: str):
+def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False):
     """处理drc文件或目录"""
     # 获取所有drc文件路径
     if os.path.isfile(src_path):
@@ -153,8 +153,19 @@ def process_drc_files(src_path: str, save_dir: str):
         # 直接处理生成器，实现流式处理
         image_count = 0
         for img, filename in extract_images_from_drc(drc_path):
+            if reconcat_3x3:
+                if img.shape[1] == 2880:
+                    # 将img横向切成3份,然后竖着拼接
+                    src_image_patches = []
+                    for i in range(3):
+                        src_image_patches.append(img[:, i*img.shape[1]//3:(i+1)*img.shape[1]//3])
+                    dst_image = np.concatenate(src_image_patches, axis=0)
+                else:
+                    continue
+            else:
+                dst_image = img
             out_path = os.path.join(save_subdir, filename)
-            cv2.imwrite(out_path, img)
+            cv2.imwrite(out_path, dst_image)
             image_count += 1
             print(f"✅ 图像保存为: {out_path}")
         
@@ -167,10 +178,10 @@ def main():
     parser = argparse.ArgumentParser(description='解析drc文件中的图像数据')
     parser.add_argument('src_path', help='drc文件或目录的路径')
     parser.add_argument('save_dir', help='保存解析出的图像的目录')
-    
+    parser.add_argument('--reconcat_3x3', action='store_true', help='是否重组九宫格')
     args = parser.parse_args()
     
-    process_drc_files(args.src_path, args.save_dir)
+    process_drc_files(args.src_path, args.save_dir, args.reconcat_3x3)
 
 if __name__ == "__main__":
     main()
