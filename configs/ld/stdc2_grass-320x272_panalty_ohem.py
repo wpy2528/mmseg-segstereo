@@ -53,7 +53,7 @@ model = dict(
         norm_cfg=norm_cfg,
         align_corners=True,
         loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-        sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', thresh=0.7, min_kept=10000)
+        sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
     ),
     auxiliary_head=[
         dict(
@@ -67,7 +67,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='FCNHead',
@@ -80,7 +80,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='STDCHead',
