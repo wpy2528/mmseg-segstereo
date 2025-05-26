@@ -131,9 +131,9 @@ def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False):
         drc_paths = [src_path]
     else:
         drc_zip_paths = glob.glob(os.path.join(src_path, "**", "*.drc.zip"), recursive=True)
-    for drc_zip_path in drc_zip_paths:
-        extract_file(drc_zip_path, os.path.dirname(drc_zip_path))
-    drc_paths = glob.glob(os.path.join(src_path, "**", "*.drc"), recursive=True)
+        for drc_zip_path in drc_zip_paths:
+            extract_file(drc_zip_path, os.path.dirname(drc_zip_path))
+        drc_paths = glob.glob(os.path.join(src_path, "**", "*.drc"), recursive=True)
     if not drc_paths:
         print(f"⚠️ 没有找到drc文件: {src_path}")
         return

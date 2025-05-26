@@ -42,7 +42,6 @@ def main():
     args = parser.parse_args()
     project_name = args.project_name
     dst_dataset_dir = args.dst_dataset_dir.rstrip("/")
-    assert("_c3" in dst_dataset_dir), "丫搞错了，这个项目是3类标注，不是5类标注"
     if os.path.exists(dst_dataset_dir):
         # 判断目录中是否有images文件夹
         if not (os.path.exists(os.path.join(dst_dataset_dir, "images")) and os.path.exists(os.path.join(dst_dataset_dir, "labels"))):

@@ -26,10 +26,35 @@ class LDPerceptionSegDataset(BaseSegDataset):
     )
     def __init__(self,
                  data_root,
+                 num_classes=3,
                  ann_file=None,
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
+                 include=None,
+                 exclude=None,
                  **kwargs) -> None:
+        if num_classes == 4:
+            LDPerceptionSegDataset.METAINFO = dict(
+                classes = ('background', 'grass', 'soil', 'animal'),
+                palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0], [0, 0, 255]]
+            )
+        else:
+            LDPerceptionSegDataset.METAINFO = dict(
+                classes = ('background', 'grass', 'soil'),
+                palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0]]
+            )
+        # include和exclude不能同时存在，如果非None，则必须为list
+        assert include is None or exclude is None, "include和exclude不能同时存在"
+        if include is not None:
+            assert isinstance(include, list), "include必须为list"
+            include = ['/' + e.rstrip('/').lstrip('/') + '/' for e in include]
+        if exclude is not None:
+            assert isinstance(exclude, list), "exclude必须为list"
+            exclude = ['/' + e.rstrip('/').lstrip('/') + '/' for e in exclude]
+        self.include = include
+        self.exclude = exclude
+        print(f"include: {self.include}, exclude: {self.exclude}")
+        
         super().__init__(
             img_suffix=img_suffix,
             seg_map_suffix=seg_map_suffix,
@@ -55,7 +80,12 @@ class LDPerceptionSegDataset(BaseSegDataset):
         else:
             assert os.path.isdir(self.data_root), self.data_root
             lines = glob.glob(os.path.join(self.data_root, "**", "images", "*.jpg"), recursive=True)
-                    
+
+        if self.include is not None:
+            lines = [line for line in lines if any(include in line for include in self.include)]
+        if self.exclude is not None:
+            lines = [line for line in lines if not any(exclude in line for exclude in self.exclude)]
+
         src_log_path = MMLogger.get_current_instance().log_file
         # 如果当前是调试模式，则不写入样本路径
         if src_log_path is not None and not sys.gettrace():
