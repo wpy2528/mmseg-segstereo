@@ -123,3 +123,5 @@ pgs
 cursor_utils
 model_grass_segmentation_inputmeta.yml
 work_dirs
+configs/ld/debug.py
+configs/ld/generate_augmented_val_dataset.py

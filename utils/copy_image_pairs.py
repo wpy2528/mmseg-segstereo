@@ -7,6 +7,11 @@ source_dir = "/data/share/filter_hedgehog"
 target_dir = "/data/share/hed"
 target_images_dir = "/data/user_device_drc/0520_hedgehog"
 
+
+'''
+根据给定的源文件路径列表，从给定目录中找出对应的图片和mask，并复制到目标目录中
+'''
+
 # 确保目标目录存在
 os.makedirs(target_dir, exist_ok=True)
 os.makedirs(os.path.join(target_dir, "images"), exist_ok=True)
