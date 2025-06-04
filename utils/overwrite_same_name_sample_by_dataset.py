@@ -52,7 +52,7 @@ def process_dataset(src_dataset_dir, filter_dir):
 
 def main():
     parser = argparse.ArgumentParser(description='处理数据集中的重复样本')
-    parser.add_argument('--src_dir', type=str, default="/home/mck/datasets/grass_seg_data_c3/",
+    parser.add_argument('--src_dir', type=str, default="/home/mck/datasets/grass_seg_data_c4/",
                         help='数据集根目录')
     parser.add_argument('--filter_dir', type=str, required=True,
                         help='重新标注数据组成的新数据集的目录名称')

@@ -21,6 +21,7 @@ from .imgaug_for_mm.isp_stype_aug import ISPStyleAug
 from .imgaug_for_mm.concat_front_and_side import ConcatFrontAndSide
 from .imgaug_for_mm.crop import CropTop
 from .imgaug_for_mm.image_quality_aug import ImageQualityAug
+from .imgaug_for_mm.dilate_soil import DilateSoilMask
 # yapf: enable
 __all__ = [
     'LoadAnnotations', 'RandomCrop', 'BioMedical3DRandomCrop', 'SegRescale',
@@ -34,5 +35,5 @@ __all__ = [
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
     
-    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug'
+    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask'
 ]

@@ -46,6 +46,7 @@ def main():
     # 设置命令行参数
     parser = argparse.ArgumentParser(description='查找图像标注信息')
     parser.add_argument('json_path', type=str, help='标注JSON文件的路径')
+    parser.add_argument('--image_list', type=str, default=None, help='图像列表文件的路径')
     args = parser.parse_args()
     
     # 检查文件是否存在
@@ -54,35 +55,53 @@ def main():
         return
     
     print(f"已加载标注文件：{args.json_path}")
-    print("输入图像名称进行查询（输入'q'退出）：")
-    
-    # 交互式查询循环
-    while True:
-        # 获取用户输入
-        image_name = input("\n请输入图像名称: ").strip()
-        
-        # 检查是否退出
-        if image_name.lower() == 'q':
-            print("程序已退出")
-            break
-        
-        # 如果输入为空，继续下一次循环
-        if not image_name:
-            continue
-        
-        # 查找标注信息
-        results = find_annotation_by_image(args.json_path, image_name)
-        
-        # 打印结果
-        if results:
-            print(f"\n找到 {len(results)} 条标注信息：")
-            for result in results:
-                print(f"ID: {result['id']}")
-                print(f"标注人员: {result['annotator']}")
-                print(f"图像路径: {result['image_path']}")
-                print("-" * 50)
-        else:
-            print(f"\n未找到图像 {image_name} 的标注信息")
+
+    if args.image_list:
+        with open(args.image_list, 'r', encoding='utf-8') as f:
+            image_list = f.readlines()
+            image_list = [image_name.strip() for image_name in image_list]
+            src_image_names = [os.path.basename(image_name) for image_name in image_list]
+            for i in range(len(src_image_names)):
+                if src_image_names[i].count(".jpg") == 2:
+                    src_image_names[i] = src_image_names[i].replace(".jpg", ".png")
+            for src_image_name in src_image_names:
+                results = find_annotation_by_image(args.json_path, src_image_name)
+                if results:
+                    # print(f"\n找到 {len(results)} 条标注信息：")
+                    for result in results:
+                        print(result['id'])
+                        # print(f"ID: {result['id']}")
+                        # print(f"标注人员: {result['annotator']}")
+    else:
+        print("输入图像名称进行查询（输入'q'退出）：")
+        # 交互式查询循环
+        while True:
+            # 获取用户输入
+            image_name = input("\n请输入图像名称: ").strip()
+            
+            # 检查是否退出
+            if image_name.lower() == 'q':
+                print("程序已退出")
+                break
+            
+            # 如果输入为空，继续下一次循环
+            if not image_name:
+                continue
+            
+            # 查找标注信息
+            results = find_annotation_by_image(args.json_path, image_name)
+            
+            # 打印结果
+            if results:
+                # print(f"\n找到 {len(results)} 条标注信息：")
+                for result in results:
+                    print(result['id'])
+                    # print(f"ID: {result['id']}")
+                    # print(f"标注人员: {result['annotator']}")
+                    # print(f"图像路径: {result['image_path']}")
+                    # print("-" * 50)
+            else:
+                print(f"\n未找到图像 {image_name} 的标注信息")
 
 if __name__ == '__main__':
     main() 

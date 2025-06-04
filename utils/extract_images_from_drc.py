@@ -147,7 +147,7 @@ def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False):
     for drc_path in drc_paths:
         print(f"\n处理文件: {drc_path}")
         drc_name = Path(drc_path).stem
-        save_subdir = os.path.join(save_dir, drc_name)
+        save_subdir = save_dir
         os.makedirs(save_subdir, exist_ok=True)
         
         # 直接处理生成器，实现流式处理

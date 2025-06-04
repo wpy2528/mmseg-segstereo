@@ -41,6 +41,9 @@ ignored_categories = ["shadow", "glare", "overexposure"]
 same_category_map = {
     "hedgehog": "animal",
     "obstacle": "background",
+    "person": "background",
+    "stick": "background",
+    "leaf": "grassland",
 }
 
 def parse_labelstudio_to_coco(

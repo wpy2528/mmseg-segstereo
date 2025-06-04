@@ -21,7 +21,7 @@ def export_onnx(config, checkpoint, device, input_hw=(320, 320)):
     dst_onnx_path = checkpoint.replace(".pth", ".onnx")
     dummy_input = torch.zeros(1, 3, input_hw[0], input_hw[1]).float()
     torch.onnx.export(
-        model, (dummy_input, None, "tensor"), dst_onnx_path, input_names=["input"], output_names=["output"],
+        model, (dummy_input, None, "export_for_nb"), dst_onnx_path, input_names=["input"], output_names=["output"],
         dynamic_axes=None,
         opset_version=11
     )

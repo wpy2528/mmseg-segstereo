@@ -13,9 +13,7 @@ CLASS_NAMES = {
     0: "background",
     1: "grassland",
     2: "soil", 
-    # 2: "water", 
-    # 3: "soil",
-    # 4: "animal"
+    3: "animal", 
 }
 
 # 从CLASS_NAMES中获取soil对应的class_id

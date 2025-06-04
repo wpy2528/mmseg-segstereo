@@ -32,10 +32,6 @@ class ISPStyleAug(BaseTransform):
                 iaa.AddToHueAndSaturation((-8, 8)),
                 iaa.LinearContrast((0.85, 1.15))
             ]),
-            iaa.Sometimes(
-                0.5,  # 50% 的概率加噪声
-                iaa.AdditiveGaussianNoise(scale=(1, 8))  # 加随机高斯噪声
-            )
         ])
 
     def transform(self, results):
