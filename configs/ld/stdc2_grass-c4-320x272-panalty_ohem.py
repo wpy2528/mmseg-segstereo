@@ -1,7 +1,7 @@
 # ===== Global Constants =====
-NUM_CLASSES = 3
-RESIZE_WH = (320, 320)
-BATCH_PAD_HW = (320, 320)
+NUM_CLASSES = 4
+RESIZE_WH = (320, 272)
+BATCH_PAD_HW = (272, 320)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -53,7 +53,7 @@ model = dict(
         norm_cfg=norm_cfg,
         align_corners=True,
         loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-        sampler=dict(type='OHEMPixelSampler', thresh=0.7, min_kept=10000)
+        sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
     ),
     auxiliary_head=[
         dict(
@@ -67,7 +67,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSampler', thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='FCNHead',
@@ -80,7 +80,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSampler', thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='STDCHead',
@@ -115,8 +115,8 @@ train_pipeline = [
         keep_ratio=False
     ),
     dict(type='RandomFlip', prob=0.5),
-    dict(type='ISPStyleAug', prob=0.9),
-    dict(type='CopyPasteTop', pool_size=16, prob=1.0),
+    dict(type='ISPStyleAug', prob=0.8),
+    dict(type='ImageQualityAug', prob=0.8),
     dict(type='PackSegInputs')
 ]
 
@@ -127,6 +127,8 @@ test_pipeline = [
     dict(type='PackSegInputs')
 ]
 
+TEST_FOLDERS = ['misseg_common', 'misseg_20250521', 'hedgehog_data']
+
 train_dataloader = dict(
     batch_size=16,
     num_workers=4,
@@ -134,7 +136,8 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/train/',
+        data_root='/home/mck/datasets/grass_seg_data_c4',
+        num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     )
@@ -147,8 +150,10 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c3_reassigned/val_concat/',
+        data_root='/home/mck/datasets/grass_seg_data_c4',
+        num_classes=NUM_CLASSES,
         pipeline=test_pipeline,
+        include=TEST_FOLDERS,
         test_mode=True
     )
 )
@@ -205,7 +210,7 @@ log_level = 'INFO'
 load_from = None
 resume = False
 
-train_cfg = dict(by_epoch=True, max_epochs=50, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
