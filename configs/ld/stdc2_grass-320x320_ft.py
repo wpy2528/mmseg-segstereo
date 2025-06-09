@@ -205,7 +205,7 @@ log_level = 'INFO'
 load_from = "work_dirs/stdc2_in1k-pre-240k_grass-320x320/last_checkpoint"
 resume = False
 
-train_cfg = dict(by_epoch=True, max_epochs=50, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
