@@ -127,7 +127,7 @@ test_pipeline = [
 ]
 
 TEST_FOLDERS = ['misseg_common', 'misseg_20250521', 'hedgehog_data']
-REPEAT_FOLDERS = {'2501AHGE000A0092': 3, 'misseg_leaf_24507HGD00070081': 2, '25062HGG00020016': 3}
+REPEAT_FOLDERS = {'2501AHGE000A0092': 2, 'misseg_leaf_24507HGD00070081': 1, '25062HGG00020016': 2, '0610_hedgehog': 1}
 
 train_dataloader = dict(
     batch_size=16,
@@ -209,7 +209,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = None
+load_from = "work_dirs/stdc2_grass-c4-320x272-panalty_ohem_noaug/last_checkpoint"
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)

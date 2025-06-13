@@ -5,7 +5,6 @@ import time
 import os
 import os.path as osp
 
-import mmengine.fileio as fileio
 from typing import List
 
 from mmengine.logging import MMLogger, print_log
@@ -31,6 +30,7 @@ class LDPerceptionSegDataset(BaseSegDataset):
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
                  include=None,
+                 repeat=None,
                  exclude=None,
                  **kwargs) -> None:
         if num_classes == 4:
@@ -51,9 +51,13 @@ class LDPerceptionSegDataset(BaseSegDataset):
         if exclude is not None:
             assert isinstance(exclude, list), "exclude必须为list"
             exclude = ['/' + e.rstrip('/').lstrip('/') + '/' for e in exclude]
+        if repeat is not None:
+            assert isinstance(repeat, dict), "repeat必须为int"
+            self.repeat = repeat
         self.include = include
         self.exclude = exclude
-        print(f"include: {self.include}, exclude: {self.exclude}")
+        self.repeat = repeat
+        print(f"include: {self.include}, exclude: {self.exclude}, repeat: {self.repeat}")
         
         super().__init__(
             img_suffix=img_suffix,
@@ -85,6 +89,16 @@ class LDPerceptionSegDataset(BaseSegDataset):
             lines = [line for line in lines if any(include in line for include in self.include)]
         if self.exclude is not None:
             lines = [line for line in lines if not any(exclude in line for exclude in self.exclude)]
+        if self.repeat is not None:
+            # 根据repeat的dict，对lines进行重复
+            repeat_lines = []
+            for line in lines:
+                for key, value in self.repeat.items():
+                    if key in line:
+                        repeat_lines.extend([line] * value)
+                        break
+
+            lines += repeat_lines
 
         src_log_path = MMLogger.get_current_instance().log_file
         # 如果当前是调试模式，则不写入样本路径

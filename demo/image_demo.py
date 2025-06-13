@@ -11,6 +11,7 @@ from mmengine.structures import PixelData
 from mmseg.apis import inference_model, init_model, show_result_pyplot
 from flask import Flask, request, jsonify, send_file
 from io import BytesIO
+import hashlib
 
 def get_color_mask(mask):
     color_mask = np.zeros_like(mask, dtype=np.uint8)
@@ -84,6 +85,16 @@ def main():
     if not args.checkpoint.endswith(".pth"):
         with open(args.checkpoint, "r") as f:
             args.checkpoint = f.read().strip()
+
+    # 输出 pth 文件的 md5sum
+    def get_md5(file_path):
+        hash_md5 = hashlib.md5()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+    if os.path.isfile(args.checkpoint):
+        print(f"{args.checkpoint} 的 md5sum: {get_md5(args.checkpoint)}")
 
     os.makedirs(args.out_file, exist_ok=True)
     assert os.path.isdir(args.out_file), f"{args.out_file} is not a directory"

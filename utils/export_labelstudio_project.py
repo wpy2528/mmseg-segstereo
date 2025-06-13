@@ -16,8 +16,8 @@ HEADERS = {
 }
 # ---------------------------
 
-def get_all_projects():
-    url = f"{LABEL_STUDIO_URL}/api/projects/"
+def get_all_projects(i=1):
+    url = f"{LABEL_STUDIO_URL}/api/projects/?page={i}"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     return response.json()
@@ -53,8 +53,11 @@ def main():
                 sys.exit(1)
 
     print("🔍 获取项目列表...")
-    projects = get_all_projects()
-    project_id = get_project_id_by_name(projects, project_name)
+    for i in range(1, 4):
+        projects = get_all_projects(i)
+        project_id = get_project_id_by_name(projects, project_name)
+        if project_id:
+            break
     if not project_id:
         print(f"❌ 找不到项目：{project_name}")
         sys.exit(1)

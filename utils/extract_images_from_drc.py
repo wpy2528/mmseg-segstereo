@@ -60,7 +60,7 @@ def extract_unix_timestamp(value: str) -> int:
 LOG_HEAD_STRUCT = struct.Struct('<BBHI BBB b i 16s')    # LogHead
 PERCEIVE_HEAD_STRUCT = struct.Struct('<BBIQ')           # PerceiveHead (14 bytes)
 
-def extract_images_from_drc(file_path: str) -> Generator[Tuple[np.ndarray, str], None, None]:
+def extract_images_from_drc(file_path: str, save_jpg: bool = False) -> Generator[Tuple[np.ndarray, str], None, None]:
     """解析drc文件，返回图像数据和对应的文件名"""
     start_real_unix_ts = extract_unix_timestamp(os.path.splitext(os.path.basename(file_path))[0])
     _start_sys_ts = 0
@@ -117,14 +117,14 @@ def extract_images_from_drc(file_path: str) -> Generator[Tuple[np.ndarray, str],
                     
                     if img is not None:
                         # 生成文件名
-                        dst_image_name = get_final_time_str(start_real_unix_ts, time_stamp // 1000, _start_sys_ts) + ".png"
+                        dst_image_name = get_final_time_str(start_real_unix_ts, time_stamp // 1000, _start_sys_ts) + (".jpg" if save_jpg else ".png")
                         yield img, dst_image_name
                     else:
                         print("❌ 图像解码失败")
 
             index += 1
 
-def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False):
+def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False, save_jpg: bool = False):
     """处理drc文件或目录"""
     # 获取所有drc文件路径
     if os.path.isfile(src_path):
@@ -152,7 +152,7 @@ def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False):
         
         # 直接处理生成器，实现流式处理
         image_count = 0
-        for img, filename in extract_images_from_drc(drc_path):
+        for img, filename in extract_images_from_drc(drc_path, save_jpg):
             if reconcat_3x3:
                 if img.shape[1] == 2880:
                     # 将img横向切成3份,然后竖着拼接
@@ -179,9 +179,10 @@ def main():
     parser.add_argument('src_path', help='drc文件或目录的路径')
     parser.add_argument('save_dir', help='保存解析出的图像的目录')
     parser.add_argument('--reconcat_3x3', action='store_true', help='是否重组九宫格')
+    parser.add_argument('--save_jpg', action='store_true', help='是否保存为png格式')
     args = parser.parse_args()
     
-    process_drc_files(args.src_path, args.save_dir, args.reconcat_3x3)
+    process_drc_files(args.src_path, args.save_dir, args.reconcat_3x3, args.save_jpg)
 
 if __name__ == "__main__":
     main()

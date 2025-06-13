@@ -126,3 +126,5 @@ work_dirs
 configs/ld/debug.py
 configs/ld/generate_augmented_val_dataset.py
 labelstudio
+user_device_drc
+docker_images_v1.8.x
