@@ -177,12 +177,16 @@ def process_drc_files(src_path: str, save_dir: str, reconcat_3x3: bool = False, 
 def main():
     parser = argparse.ArgumentParser(description='解析drc文件中的图像数据')
     parser.add_argument('src_path', help='drc文件或目录的路径')
-    parser.add_argument('save_dir', help='保存解析出的图像的目录')
+    # parser.add_argument('save_dir', help='保存解析出的图像的目录')
     parser.add_argument('--reconcat_3x3', action='store_true', help='是否重组九宫格')
     parser.add_argument('--save_jpg', action='store_true', help='是否保存为png格式')
     args = parser.parse_args()
+    if os.path.isdir(args.src_path):
+        save_dir = args.src_path
+    else:
+        save_dir = os.path.dirname(args.src_path)
     
-    process_drc_files(args.src_path, args.save_dir, args.reconcat_3x3, args.save_jpg)
+    process_drc_files(args.src_path, save_dir, args.reconcat_3x3, args.save_jpg)
 
 if __name__ == "__main__":
     main()

@@ -115,8 +115,6 @@ train_pipeline = [
         keep_ratio=False
     ),
     dict(type='RandomFlip', prob=0.5),
-    dict(type='ISPStyleAug', prob=0.8),
-    dict(type='ImageQualityAug', prob=0.8),
     dict(type='PackSegInputs')
 ]
 
@@ -128,6 +126,7 @@ test_pipeline = [
 ]
 
 TEST_FOLDERS = ['misseg_common', 'misseg_20250521', 'hedgehog_data']
+REPEAT_FOLDERS = {'2501AHGE000A0092': 2, 'misseg_leaf_24507HGD00070081': 1, '25062HGG00020016': 2, '0610_hedgehog': 1, 'misseg_soil': 1}
 
 train_dataloader = dict(
     batch_size=16,
@@ -140,6 +139,7 @@ train_dataloader = dict(
         data_root='/home/mck/datasets/grass_seg_data_c4',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
+        repeat=REPEAT_FOLDERS,
         test_mode=False
     )
 )
@@ -208,7 +208,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = None
+load_from = "work_dirs/stdc2_grass-c4-320x272-panalty_ohem_noaug/last_checkpoint"
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)
