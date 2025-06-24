@@ -87,7 +87,12 @@ def extract_images_from_drc(file_path: str, save_jpg: bool = False) -> Generator
             ) = LOG_HEAD_STRUCT.unpack(head_bytes)
 
             # 读取 data 段
-            data = f.read(real_len)
+            try:
+                data = f.read(real_len)
+            except Exception as e:
+                print(f"⚠️ 读取数据失败: {e}")
+                break
+
             if len(data) < real_len:
                 print("⚠️ 文件中 data 长度不足，提前结束")
                 break

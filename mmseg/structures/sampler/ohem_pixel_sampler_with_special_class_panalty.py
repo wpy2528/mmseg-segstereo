@@ -86,7 +86,11 @@ class OHEMPixelSamplerWithSpecialClassPanalty(BasePixelSampler):
 
             # === 加重特定预测错误（如 GT=2 且 Pred=0） ===
             pred_label = seg_logit.argmax(dim=1)  # shape: (N, H, W)
-            penalty_mask = (seg_label == self.gt_class) & (pred_label == self.panalty_pred_class)
+            # 如果gt_class为-1，则惩罚所有错误地预测为panalty_pred_class的像素
+            if self.gt_class == -1:
+                penalty_mask = (pred_label == self.panalty_pred_class) & (pred_label != seg_label)
+            else:
+                penalty_mask = (seg_label == self.gt_class) & (pred_label == self.panalty_pred_class)
             seg_weight[penalty_mask] *= self.penalty_factor
 
             return seg_weight

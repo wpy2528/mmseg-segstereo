@@ -13,11 +13,13 @@ CLASS_NAMES = {
     0: "background",
     1: "grassland",
     2: "soil", 
-    3: "animal", 
+    3: "hedgehog", 
 }
 
 # 从CLASS_NAMES中获取soil对应的class_id
+GRASSLAND_CLASS_ID = [key for key, value in CLASS_NAMES.items() if value == "grassland"][0]
 SOIL_CLASS_ID = [key for key, value in CLASS_NAMES.items() if value == "soil"][0]
+ANIMAL_CLASS_ID = [key for key, value in CLASS_NAMES.items() if value == "hedgehog"][0]
 
 LABELME_TEMPLATE = {
 "version": "5.1.1",
@@ -78,19 +80,16 @@ def convert_mask_to_labelme(src_mask_np, src_image_name):
         # 创建二值掩码
         binary_mask = (label_img == class_id).astype(np.uint8)
 
-        if class_id == 1:
-            # 进行连通域分析
-            # 如果连通域面积小于50，则删除
-            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary_mask)
-            # for i in range(1, num_labels):
-            #     if stats[i, cv2.CC_STAT_AREA] < 50:
-            #         binary_mask[labels == i] = 0
-            # 对剩余的每个连通域遍历，并膨胀
-            kernel = np.ones((5, 5), np.uint8)
+        if class_id in [SOIL_CLASS_ID, ANIMAL_CLASS_ID]:
+            # 膨胀关键类别mask
+            if class_id == SOIL_CLASS_ID:
+                kernel = np.ones((5, 5), np.uint8)
+            elif class_id == ANIMAL_CLASS_ID:
+                kernel = np.ones((3, 3), np.uint8)
             binary_mask_eroded = cv2.dilate(binary_mask, kernel, iterations=1)
-            # 找出膨胀后的草地mask与泥土mask的交集
-            binary_mask_with_soil = cv2.bitwise_and(binary_mask_eroded, (label_img == SOIL_CLASS_ID).astype(np.uint8))
-            # 原始草地mask与交集合并（从而防止草地和泥土之间出现间隙）
+            # 找出膨胀后的mask与草地mask的交集
+            binary_mask_with_soil = cv2.bitwise_and(binary_mask_eroded, (label_img == GRASSLAND_CLASS_ID).astype(np.uint8))
+            # 原始mask与交集合并（从而防止类别之间出现间隙）
             binary_mask = cv2.bitwise_or(binary_mask, binary_mask_with_soil)
         
         # 查找轮廓
