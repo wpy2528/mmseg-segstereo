@@ -1,4 +1,5 @@
 import argparse
+import time
 import json
 import os
 import requests
@@ -47,10 +48,8 @@ def main():
         if not (os.path.exists(os.path.join(dst_dataset_dir, "images")) and os.path.exists(os.path.join(dst_dataset_dir, "labels"))):
             raise ValueError(f"目录 {dst_dataset_dir} 已经存在，但是里头没有images文件夹或者labels文件夹，说明这个目录不是一个独立的数据集目录，好好检查检查是不是放到大数据集根目录了")
         else:
-            print(f"目录 {dst_dataset_dir} 已经存在，是否继续？")
-            if not input("是否继续？(y/n): ").lower() == "y":
-                print("👋 退出")
-                sys.exit(1)
+            print(f"目录 {dst_dataset_dir} 已经存在，想中止的话抓紧啦！")
+            time.sleep(5)
 
     print("🔍 获取项目列表...")
     for i in range(1, 4):

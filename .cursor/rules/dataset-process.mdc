@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+1. 每个数据集是一个目录，其中包含两个子目录：images和labels images中全是.jpg文件，即原图；labels中包含与image中的文件同名的.png文件，即图像对应的mask。
+2. 我给定的路径可能是一个包含若干数据集的父级目录，这种情况下递归处理所有的数据集目录。
+3. 对于删除某个.jpg或者.png文件的任务，需要一并把对应的.png或者.jpg文件删除。
