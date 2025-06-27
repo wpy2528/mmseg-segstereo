@@ -53,7 +53,7 @@ model = dict(
         norm_cfg=norm_cfg,
         align_corners=True,
         loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-        sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
+        sampler=dict(type='OHEMPixelSamplerWithSpecialClassPenalty', gt_class=2, penalty_pred_class=0, thresh=0.7, min_kept=10000)
     ),
     auxiliary_head=[
         dict(
@@ -67,7 +67,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPenalty', gt_class=2, penalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='FCNHead',
@@ -80,7 +80,7 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPanalty', gt_class=2, panalty_pred_class=0, thresh=0.7, min_kept=10000)
+            sampler=dict(type='OHEMPixelSamplerWithSpecialClassPenalty', gt_class=2, penalty_pred_class=0, thresh=0.7, min_kept=10000)
         ),
         dict(
             type='STDCHead',
@@ -209,7 +209,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = "work_dirs/stdc2_grass-c4-320x272-panalty_ohem_noaug/last_checkpoint"
+load_from = "work_dirs/stdc2_grass-c4-320x272-penalty_ohem_noaug/last_checkpoint"
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)

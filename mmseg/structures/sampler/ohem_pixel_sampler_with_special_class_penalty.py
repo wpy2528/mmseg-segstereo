@@ -8,7 +8,7 @@ from .builder import PIXEL_SAMPLERS
 
 
 @PIXEL_SAMPLERS.register_module()
-class OHEMPixelSamplerWithSpecialClassPanalty(BasePixelSampler):
+class OHEMPixelSamplerWithSpecialClassPenalty(BasePixelSampler):
     """Online Hard Example Mining Sampler for segmentation.
 
     Args:
@@ -23,7 +23,7 @@ class OHEMPixelSamplerWithSpecialClassPanalty(BasePixelSampler):
             Default: 5.0.
     """
 
-    def __init__(self, context, gt_class, panalty_pred_class,thresh=None, min_kept=100000, penalty_factor=5.0):
+    def __init__(self, context, gt_class, penalty_pred_class,thresh=None, min_kept=100000, penalty_factor=5.0):
         super().__init__()
         self.context = context
         assert min_kept > 1
@@ -31,7 +31,7 @@ class OHEMPixelSamplerWithSpecialClassPanalty(BasePixelSampler):
         self.min_kept = min_kept
         self.penalty_factor = penalty_factor
         self.gt_class = gt_class
-        self.panalty_pred_class = panalty_pred_class
+        self.penalty_pred_class = penalty_pred_class
 
     def sample(self, seg_logit, seg_label):
         """Sample pixels that have high loss or with low prediction confidence.
@@ -86,11 +86,11 @@ class OHEMPixelSamplerWithSpecialClassPanalty(BasePixelSampler):
 
             # === 加重特定预测错误（如 GT=2 且 Pred=0） ===
             pred_label = seg_logit.argmax(dim=1)  # shape: (N, H, W)
-            # 如果gt_class为-1，则惩罚所有错误地预测为panalty_pred_class的像素
+            # 如果gt_class为-1，则惩罚所有错误地预测为penalty_pred_class的像素
             if self.gt_class == -1:
-                penalty_mask = (pred_label == self.panalty_pred_class) & (pred_label != seg_label)
+                penalty_mask = (pred_label == self.penalty_pred_class) & (pred_label != seg_label)
             else:
-                penalty_mask = (seg_label == self.gt_class) & (pred_label == self.panalty_pred_class)
+                penalty_mask = (seg_label == self.gt_class) & (pred_label == self.penalty_pred_class)
             seg_weight[penalty_mask] *= self.penalty_factor
 
             return seg_weight
