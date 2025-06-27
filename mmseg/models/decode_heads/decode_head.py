@@ -332,9 +332,9 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
                     seg_label,
                     weight=seg_weight,
                     ignore_index=self.ignore_index)
-
-        loss['acc_seg'] = accuracy(
-            seg_logits, seg_label, ignore_index=self.ignore_index)
+        if len(seg_label.shape) == 3:
+            loss['acc_seg'] = accuracy(
+                seg_logits, seg_label, ignore_index=self.ignore_index)
         return loss
 
     def predict_by_feat(self, seg_logits: Tensor,

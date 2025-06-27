@@ -55,6 +55,8 @@ def main():
     # register all modules in mmdet into the registries
     register_all_modules()
 
+    print("注意可视化的是训练数据集，不是验证数据集")
+    time.sleep(1)
     dataset = DATASETS.build(cfg.train_dataloader.dataset)
     visualizer = VISUALIZERS.build(cfg.visualizer)
     visualizer.dataset_meta = dataset.metainfo

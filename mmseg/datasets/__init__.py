@@ -41,7 +41,7 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          SegRescale)
 from .voc import PascalVOCDataset
 from .ld_perception_seg_dataset import LDPerceptionSegDataset
-
+from .ld_perception_pretrain_dataset import LDPerceptionPretrainDataset
 from .samplers import FrontAndSideImageBatchSampler
 
 # yapf: enable
@@ -67,6 +67,6 @@ __all__ = [
     'NYUDataset', 'HSIDrive20Dataset',
     
     'LDPerceptionSegDataset',
-
+    'LDPerceptionPretrainDataset',
     'FrontAndSideImageBatchSampler',
 ]

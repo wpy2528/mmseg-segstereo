@@ -82,7 +82,11 @@ class PackSegInputs(BaseTransform):
                               'segmentation map, usually the segmentation '
                               'map is 2D, but got '
                               f'{results["gt_seg_map"].shape}')
-                data = to_tensor(results['gt_seg_map'].astype(np.int64))
+                if len(results['gt_seg_map'].shape) == 3:
+                    warnings.warn('3通道 视为普通图像处理')
+                    data = to_tensor(results['gt_seg_map'].transpose(2, 0, 1).astype(np.int64))
+                else:
+                    raise ValueError(f'3通道我都忍你了，还搞个 {results["gt_seg_map"].shape} 差不多得了')
             gt_sem_seg_data = dict(data=data)
             data_sample.gt_sem_seg = PixelData(**gt_sem_seg_data)
 

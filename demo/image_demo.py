@@ -35,14 +35,16 @@ def infer_image(model, src_image_path, src_image_np, args):
     # 保存预测mask
     if args.save_pred_mask:
         mask_t = result._pred_sem_seg.data
-        mask_np = mask_t.cpu().numpy()
-        mask_np = mask_t.astype(np.uint8)
+        mask_np = mask_t.cpu().numpy().astype(np.uint8)
         cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", "_mask.png")), mask_np)
 
-    mask_t = result._pred_sem_seg.data
-    mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
-
-    vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
+    if args.pred_is_image:
+        vis = result._seg_logits.data
+        vis = vis.cpu().numpy().clip(0, 255).astype(np.uint8).transpose(1, 2, 0)
+    else:
+        mask_t = result._pred_sem_seg.data
+        mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
+        vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
     res = np.hstack([src_image_np, vis])
     if draw_gt:
         res = np.hstack([res, gt_image])
@@ -56,6 +58,7 @@ def main():
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument('--out-file', default=None, help='Path to output file')
     parser.add_argument('--save-pred-mask', action='store_true', help='Save predicted mask')
+    parser.add_argument('--pred-is-image', action='store_true')
     parser.add_argument(
         '--device', default='cuda:0', help='Device used for inference')
     parser.add_argument(

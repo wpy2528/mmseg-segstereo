@@ -1,0 +1,110 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "demo grass stdc2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "demo/image_demo.py",
+            "args": ["pgs/ex2",
+                     "configs/ld/stdc2_grass-c4-320x272-panalty_fp_bg_exhibition_ft.py",
+                     "last_checkpoint",
+                     "--out-file", "pgs/vis_cases"],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "demo grass yolov5ds",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "demo/image_demo.py",
+            "args": ["/home/mck/datasets/grass_seg_data/val_concat/images/1_71189489931.jpg",
+                     "configs/ld/yolov5ds_c3_grass-320x320_aug.py",
+                     "work_dirs/yolov5ds_c3_grass-320x320_aug/last_checkpoint",
+                     "--out-file", "pgs/vis_cases"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "test grass stdc2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tools/test.py",
+            "args": ["configs/ld/stdc2_in1k-pre-240k_grass-320x320_ori_crop_top.py",
+                     "work_dirs/stdc2_in1k-pre-240k_grass-320x320_ori_crop_top/last_checkpoint"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "train debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tools/train.py",
+            "args": ["configs/ld/debug.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "train stdc2 pretrain",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tools/train.py",
+            "args": ["configs/ld/stdc2_grass-320x272-mae.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "train voc deeplabv3+",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tools/train.py",
+            "args": ["configs/deeplabv3plus/deeplabv3plus_r50-d8_4xb4-20k_voc07-512x512.py"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "browse dataset",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tools/analysis_tools/browse_dataset.py",
+            "args": ["configs/ld/stdc2_grass-320x272-mae.py",
+                     "--output-dir", "pgs/vis_cases"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "export onnx",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "utils/export_onnx.py",
+            "args": ["configs/ld/stdc2_grass-c4-320x272-panalty_ohem_noaug.py",
+                     "work_dirs/stdc2_grass-c4-320x272-panalty_ohem_noaug/last_checkpoint", "--input_hw", "272", "320"],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "export labelstudio project",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "utils/export_labelstudio_project.py",
+            "args": ["missseg_common", "pgs"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Python 调试程序: 当前文件",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
+
+上述内容是vscode的launch.json，位置在.vscode/launch.json 接下来我给出一个python命令，请你解析args并生成一个配置项加入到这个json中。
