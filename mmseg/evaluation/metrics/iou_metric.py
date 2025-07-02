@@ -149,9 +149,15 @@ class IoUMetric(BaseMetric):
                     metrics_dict = {}
                     for k, v in metrics.items():
                         if isinstance(v, np.ndarray):
-                            metrics_dict[k] = v.tolist()
+                            v_list = v.tolist()
+                            # 将list中的nan替换为None
+                            if isinstance(v_list, list):
+                                v_list = [None if isinstance(x, float) and np.isnan(x) else x for x in v_list]
+                            metrics_dict[k] = v_list
                         elif isinstance(v, np.float32) or isinstance(v, np.float64):
                             metrics_dict[k] = float(v)
+                        elif v == np.nan:
+                            metrics_dict[k] = None
                         else:
                             metrics_dict[k] = v
                     metrics_list.append(metrics_dict)

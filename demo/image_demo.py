@@ -28,7 +28,9 @@ def infer_image(model, src_image_path, src_image_np, args):
     gt_image_path = src_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
     if (gt_image_path != src_image_path and os.path.exists(gt_image_path)):
         draw_gt = True
-        gt_image = cv2.imread(gt_image_path, cv2.IMREAD_COLOR)
+        gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE)
+        vis_gt = cv2.addWeighted(src_image_np, 1, get_color_mask(gt_image), 0.5, 0)
+        cv2.putText(vis_gt, "gt", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         result.gt_sem_seg = PixelData(data=gt_image)
     else:
         draw_gt = False
@@ -45,9 +47,10 @@ def infer_image(model, src_image_path, src_image_np, args):
         mask_t = result._pred_sem_seg.data
         mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
         vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
+        cv2.putText(vis, "pred", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     res = np.hstack([src_image_np, vis])
     if draw_gt:
-        res = np.hstack([res, gt_image])
+        res = np.hstack([res, vis_gt])
     cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", ".png")), res)
 
 
@@ -140,7 +143,7 @@ def main():
     src_image_paths = [args.img]
     if args.img.endswith(".txt"):
         with open(args.img, "r") as f:
-            src_image_paths = [line.strip() for line in f.readlines()]
+            src_image_paths = [line.strip().split()[0] for line in f.readlines()]
     elif os.path.isdir(args.img):
         src_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True)
         # 排除包含/labels/的图片
