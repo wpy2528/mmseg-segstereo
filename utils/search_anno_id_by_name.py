@@ -64,7 +64,7 @@ def main():
             image_list = [image_name.strip() for image_name in image_list]
             src_image_names = [os.path.basename(image_name) for image_name in image_list]
             for i in range(len(src_image_names)):
-                src_image_names[i] = src_image_names[i].replace(".jpg", ".png")
+                src_image_names[i] = os.path.splitext(src_image_names[i])[0]
             for src_image_name in src_image_names:
                 results = find_annotation_by_image(args.json_path, src_image_name)
                 if results:

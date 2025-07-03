@@ -162,7 +162,7 @@ val_dataloader = dict(
 test_dataloader = val_dataloader
 
 # ===== Evaluation =====
-val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
+val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'], output_dir='pgs', calc_per_sample_metric=True)
 test_evaluator = val_evaluator
 
 # ===== Optimization & Scheduler =====

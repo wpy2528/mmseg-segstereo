@@ -208,7 +208,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = None
+load_from = "work_dirs/stdc2_grass-c4-320x272-penalty_fp_bg_0627/last_checkpoint"
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)

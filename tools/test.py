@@ -97,6 +97,8 @@ def main():
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
 
+    if '/' not in args.checkpoint:
+        args.checkpoint = osp.join(cfg.work_dir, args.checkpoint)
     cfg.load_from = args.checkpoint
 
     if args.show or args.show_dir:
