@@ -22,7 +22,7 @@ class CopyPasteTop(BaseTransform):
 
         img = results['img']
         h, w = img.shape[:2]
-        third = h // 3
+        half = h // 2
 
         # 更新图池：
         current_copy = {
@@ -30,7 +30,7 @@ class CopyPasteTop(BaseTransform):
             'gt_seg_map': results.get('gt_seg_map', None).copy() if 'gt_seg_map' in results else None
         }
 
-        if third == 0:
+        if half == 0:
             return results  # 图太小
 
         do_paste = len(self.pool) > 0
@@ -43,22 +43,22 @@ class CopyPasteTop(BaseTransform):
             paste_img = paste_entry['img']
             paste_seg = paste_entry.get('gt_seg_map')
 
-            # C 区域
-            paste_third = paste_img.shape[0] // 3
-            paste_c = paste_img[2*paste_third:3*paste_third].copy()
+            # C 区域（顶部1/2）
+            paste_half = paste_img.shape[0] // 2
+            paste_c = paste_img[0:paste_half].copy()
 
-            assert paste_c.shape[0] == third
-            if paste_c.shape[0] != third:
-                paste_c = np.resize(paste_c, (third, w, img.shape[2]))
-            img[0:third] = paste_c
+            assert paste_c.shape[0] == half
+            if paste_c.shape[0] != half:
+                paste_c = np.resize(paste_c, (half, w, img.shape[2]))
+            img[0:half] = paste_c
             results['img'] = img
 
             if 'gt_seg_map' in results and paste_seg is not None:
                 seg = results['gt_seg_map']
-                c_seg = paste_seg[2*paste_third:3*paste_third].copy()
-                if c_seg.shape[0] != third:
-                    c_seg = np.resize(c_seg, (third, seg.shape[1]))
-                seg[0:third] = c_seg
+                c_seg = paste_seg[0:paste_half].copy()
+                if c_seg.shape[0] != half:
+                    c_seg = np.resize(c_seg, (half, seg.shape[1]))
+                seg[0:half] = c_seg
                 results['gt_seg_map'] = seg
 
 
