@@ -10,9 +10,10 @@ import os
 from tqdm import tqdm
 import cv2
 import sys
-sys.path.append("/home/mck/yolov5ds/")
 
-from models.yolodhs import Model
+if False: # 弃用yolov5ds
+    sys.path.append("/home/mck/yolov5ds/")
+    from models.yolodhs import Model
 
 
 

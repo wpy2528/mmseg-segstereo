@@ -1,0 +1,1 @@
+/home/mck/mmsegmentation/demo/image_demo.py
