@@ -136,7 +136,7 @@ train_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_extra',
+        data_root='/home/mck/datasets/occlusion_seg_data',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
@@ -150,7 +150,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_extra',
+        data_root='/home/mck/datasets/occlusion_seg_data',
         num_classes=NUM_CLASSES,
         pipeline=test_pipeline,
         test_mode=True

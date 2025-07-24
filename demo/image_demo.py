@@ -34,11 +34,6 @@ def infer_image(model, src_image_path, src_image_np, args):
         result.gt_sem_seg = PixelData(data=gt_image)
     else:
         draw_gt = False
-    # 保存预测mask
-    if args.save_pred_mask:
-        mask_t = result._pred_sem_seg.data
-        mask_np = mask_t.cpu().numpy().astype(np.uint8)
-        cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", "_mask.png")), mask_np)
 
     if args.pred_is_image:
         vis = result._seg_logits.data
@@ -49,6 +44,11 @@ def infer_image(model, src_image_path, src_image_np, args):
         vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
         cv2.putText(vis, "pred", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     res = np.hstack([src_image_np, vis])
+    if args.save_pred_mask:
+        mask_t = result._pred_sem_seg.data
+        mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
+        mask_np = cv2.cvtColor(mask_np, cv2.COLOR_GRAY2BGR)
+        res = np.hstack([res, mask_np])
     if draw_gt:
         res = np.hstack([res, vis_gt])
     cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", ".png")), res)
