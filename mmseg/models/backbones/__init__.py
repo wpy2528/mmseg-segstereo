@@ -27,6 +27,8 @@ from .vpd import VPD
 
 from .yolov5ds_backbone import Yolov5DSBackbone
 
+from .bgnet import BGNet_Plus
+
 __all__ = [
     'ResNet', 'ResNetV1c', 'ResNetV1d', 'ResNeXt', 'HRNet', 'FastSCNN',
     'ResNeSt', 'MobileNetV2', 'UNet', 'CGNet', 'MobileNetV3',
@@ -35,5 +37,6 @@ __all__ = [
     'SVT', 'STDCNet', 'STDCContextPathNet', 'BEiT', 'MAE', 'PIDNet', 'MSCAN',
     'DDRNet', 'VPD', 
     
-    'Yolov5DSBackbone' 
+    'Yolov5DSBackbone',
+    'BGNet_Plus'
 ]

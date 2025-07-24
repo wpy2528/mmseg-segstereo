@@ -38,12 +38,12 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          PhotoMetricDistortion, RandomCrop, RandomCutOut,
                          RandomMosaic, RandomRotate, RandomRotFlip, Rerange,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
-                         SegRescale)
+                         SegRescale, LoadStereoImages, LoadStereoMatchingAnnotations)
 from .voc import PascalVOCDataset
 from .ld_perception_seg_dataset import LDPerceptionSegDataset
 from .ld_perception_pretrain_dataset import LDPerceptionPretrainDataset
 from .samplers import FrontAndSideImageBatchSampler
-
+from .ld_perception_stereo_matching_dataset import LDPerceptionStereoMatchingDataset
 # yapf: enable
 __all__ = [
     'BaseSegDataset', 'BioMedical3DRandomCrop', 'BioMedical3DRandomFlip',
@@ -69,4 +69,7 @@ __all__ = [
     'LDPerceptionSegDataset',
     'LDPerceptionPretrainDataset',
     'FrontAndSideImageBatchSampler',
+    'LDPerceptionStereoMatchingDataset',
+    'LoadStereoImages',
+    'LoadStereoMatchingAnnotations',
 ]

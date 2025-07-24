@@ -114,3 +114,100 @@ class PackSegInputs(BaseTransform):
         repr_str = self.__class__.__name__
         repr_str += f'(meta_keys={self.meta_keys})'
         return repr_str
+
+
+
+@TRANSFORMS.register_module()
+class PackStereoMatchingInputs(BaseTransform):
+    """打包双目匹配任务的输入数据。
+
+    img_meta 字典内容依赖于 meta_keys，默认包括：
+
+        - ``left_img_path``: 左图文件路径
+        - ``right_img_path``: 右图文件路径
+        - ``ori_shape``: 原始图像尺寸 (h, w, c)
+        - ``img_shape``: 网络输入图像尺寸 (h, w, c)
+        - ``pad_shape``: 填充后图像尺寸
+        - ``scale_factor``: 预处理缩放因子
+        - ``flip``: 是否翻转
+        - ``flip_direction``: 翻转方向
+
+    Args:
+        meta_keys (Sequence[str], optional): 需要从 results 中收集的元信息键。
+            默认: ('left_img_path', 'right_img_path', 'disp_map_path', 'ori_shape',
+                  'img_shape', 'pad_shape', 'scale_factor', 'flip',
+                  'flip_direction')
+    """
+    def __init__(self,
+                 meta_keys=('img_path', 'seg_map_path', 'ori_shape',
+                            'img_shape', 'pad_shape', 'scale_factor', 'flip',
+                            'flip_direction', 'reduce_zero_label')):
+        self.meta_keys = meta_keys
+
+    def transform(self, results: dict) -> dict:
+        """Method to pack the input data.
+
+        Args:
+            results (dict): Result dict from the data pipeline.
+
+        Returns:
+            dict:
+
+            - 'inputs' (obj:`torch.Tensor`): The forward data of models.
+            - 'data_sample' (obj:`SegDataSample`): The annotation info of the
+                sample.
+        """
+        packed_results = dict()
+        if 'img' in results:
+            img = results['img']
+            if len(img.shape) < 3:
+                img = np.expand_dims(img, -1)
+            if not img.flags.c_contiguous:
+                img = to_tensor(np.ascontiguousarray(img.transpose(2, 0, 1)))
+            else:
+                img = img.transpose(2, 0, 1)
+                img = to_tensor(img).contiguous()
+            packed_results['inputs'] = img
+
+        data_sample = SegDataSample()
+        if 'gt_seg_map' in results:
+            if len(results['gt_seg_map'].shape) == 2:
+                data = to_tensor(results['gt_seg_map'][None,
+                                                       ...].astype(np.int64))
+            else:
+                warnings.warn('Please pay attention your ground truth '
+                              'segmentation map, usually the segmentation '
+                              'map is 2D, but got '
+                              f'{results["gt_seg_map"].shape}')
+                if len(results['gt_seg_map'].shape) == 3:
+                    warnings.warn('3通道 视为普通图像处理')
+                    data = to_tensor(results['gt_seg_map'].transpose(2, 0, 1).astype(np.int64))
+                else:
+                    raise ValueError(f'3通道我都忍你了，还搞个 {results["gt_seg_map"].shape} 差不多得了')
+            gt_sem_seg_data = dict(data=data)
+            data_sample.gt_sem_seg = PixelData(**gt_sem_seg_data)
+
+        if 'gt_edge_map' in results:
+            gt_edge_data = dict(
+                data=to_tensor(results['gt_edge_map'][None,
+                                                      ...].astype(np.int64)))
+            data_sample.set_data(dict(gt_edge_map=PixelData(**gt_edge_data)))
+
+        if 'gt_depth_map' in results:
+            gt_depth_data = dict(
+                data=to_tensor(results['gt_depth_map'][None, ...]))
+            data_sample.set_data(dict(gt_depth_map=PixelData(**gt_depth_data)))
+
+        img_meta = {}
+        for key in self.meta_keys:
+            if key in results:
+                img_meta[key] = results[key]
+        data_sample.set_metainfo(img_meta)
+        packed_results['data_samples'] = data_sample
+
+        return packed_results
+
+    def __repr__(self) -> str:
+        repr_str = self.__class__.__name__
+        repr_str += f'(meta_keys={self.meta_keys})'
+        return repr_str

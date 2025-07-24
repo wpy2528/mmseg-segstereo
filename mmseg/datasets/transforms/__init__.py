@@ -14,6 +14,7 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          RandomRotate, RandomRotFlip, Rerange, Resize,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
                          SegRescale)
+from .loading import LoadStereoImages, LoadStereoMatchingAnnotations
 
 from .imgaug_for_mm.resize_to_front_or_side_camera_original_size import ResizeToFrontOrSideImageOriginalSize
 from .imgaug_for_mm.copy_paste import CopyPasteTop
@@ -36,5 +37,5 @@ __all__ = [
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
     
-    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask', 'RandomMasking'
+    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask', 'RandomMasking', 'LoadStereoImages', 'LoadStereoMatchingAnnotations'
 ]

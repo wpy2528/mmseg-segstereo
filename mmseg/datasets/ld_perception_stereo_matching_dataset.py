@@ -12,9 +12,10 @@ from mmengine.logging import MMLogger, print_log
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseSegDataset
 
+
 @DATASETS.register_module()
 class LDPerceptionStereoMatchingDataset(BaseSegDataset):
-    """乐动割草机分割数据集
+    """乐动割草机双目匹配数据集
 
     Args:
         split (str): Split txt file for LDMower.
@@ -66,7 +67,7 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             data_root=data_root,
             **kwargs)
 
-    # 加载coco风格的数据集
+    # 加载双目匹配数据集
     def load_data_list(self) -> List[dict]:
         data_list = []
         lines = []
@@ -83,7 +84,7 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
                     lines.extend([line.strip() for line in f.readlines()])
         else:
             assert os.path.isdir(self.data_root), self.data_root
-            lines = glob.glob(os.path.join(self.data_root, "**", "images", "*.jpg"), recursive=True)
+            lines = glob.glob(os.path.join(self.data_root, "**", "left", "*.jpg"), recursive=True) + glob.glob(os.path.join(self.data_root, "**", "left", "*.png"), recursive=True)
 
         if self.include is not None:
             lines = [line for line in lines if any(include in line for include in self.include)]
@@ -115,12 +116,18 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             f.close()
             
         for line in lines:
-            src_image_path = line
+            src_left_path = line
+            src_right_path = src_left_path.replace("/left/", "/right/")
+            gt_disparity_path = src_left_path.replace("/frames_cleanpass/", "/disparity/").replace(".png", ".pfm")
             data_info = dict(
-                img_path=src_image_path)
-            data_info['seg_map_path'] = src_image_path.replace("/images/", "/labels/").replace(self.img_suffix, self.seg_map_suffix)
-            data_info['label_map'] = self.label_map
-            data_info['reduce_zero_label'] = self.reduce_zero_label
+                src_left_path=src_left_path,
+                src_right_path=src_right_path,
+                gt_disparity_path=gt_disparity_path
+            )
+            # 用视差图作为分割图
+            data_info['gt_disparity_path'] = gt_disparity_path
+            data_info['label_map'] = None
+            data_info['reduce_zero_label'] = False
             data_info['seg_fields'] = []
             data_list.append(data_info)
         
@@ -128,5 +135,6 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             print_log(f"测试集 共计 {len(data_list)} 个样本", logger="current")
         else:
             print_log(f"训练集 共计 {len(data_list)} 个样本", logger="current")
+        assert len(data_list) > 0, "数据集为空"
         time.sleep(1)
         return data_list

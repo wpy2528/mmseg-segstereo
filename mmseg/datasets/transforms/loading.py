@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Dict, Optional, Union
 
+import cv2
 import mmcv
 import mmengine.fileio as fileio
 import numpy as np
@@ -17,6 +18,192 @@ try:
     from osgeo import gdal
 except ImportError:
     gdal = None
+
+from utils.visualize_disp import pfm_imread
+
+
+@TRANSFORMS.register_module()
+class LoadStereoImages(BaseTransform):
+    def __init__(self,
+                 to_float32: bool = False,
+                 color_type: str = 'color',
+                 imdecode_backend: str = 'cv2',
+                 file_client_args: Optional[dict] = None,
+                 ignore_empty: bool = False,
+                 *,
+                 backend_args: Optional[dict] = None) -> None:
+        self.ignore_empty = ignore_empty
+        self.to_float32 = to_float32
+        self.color_type = color_type
+        self.imdecode_backend = imdecode_backend
+
+        self.file_client_args: Optional[dict] = None
+        self.backend_args: Optional[dict] = None
+        if file_client_args is not None:
+            warnings.warn(
+                '"file_client_args" will be deprecated in future. '
+                'Please use "backend_args" instead', DeprecationWarning)
+            if backend_args is not None:
+                raise ValueError(
+                    '"file_client_args" and "backend_args" cannot be set '
+                    'at the same time.')
+
+            self.file_client_args = file_client_args.copy()
+        if backend_args is not None:
+            self.backend_args = backend_args.copy()
+
+    def transform(self, results: dict) -> Optional[dict]:
+        """Functions to load image.
+
+        Args:
+            results (dict): Result dict from
+                :class:`mmengine.dataset.BaseDataset`.
+
+        Returns:
+            dict: The dict contains loaded image and meta information.
+        """
+
+        src_left_path = results['src_left_path']
+        src_right_path = results['src_right_path']
+        results['img_path'] = src_left_path
+
+        # 加载左图
+        src_left_img_np = cv2.imread(src_left_path, cv2.IMREAD_GRAYSCALE)
+        # 加载右图
+        src_right_img_np = cv2.imread(src_right_path, cv2.IMREAD_GRAYSCALE)
+        
+        # try:
+        #     if self.file_client_args is not None:
+        #         file_client = fileio.FileClient.infer_client(
+        #             self.file_client_args, filename)
+        #         img_bytes = file_client.get(filename)
+        #     else:
+        #         img_bytes = fileio.get(
+        #             filename, backend_args=self.backend_args)
+        #     img = mmcv.imfrombytes(
+        #         img_bytes, flag=self.color_type, backend=self.imdecode_backend)
+        # except Exception as e:
+        #     if self.ignore_empty:
+        #         return None
+        #     else:
+        #         raise e
+        # # in some cases, images are not read successfully, the img would be
+        # # `None`, refer to https://github.com/open-mmlab/mmpretrain/issues/1427
+        # assert img is not None, f'failed to load image: {filename}'
+        if self.to_float32:
+            src_left_img_np = src_left_img_np.astype(np.float32)
+            src_right_img_np = src_right_img_np.astype(np.float32)
+
+        # results['src_left_img'] = src_left_img_np
+        # results['src_right_img'] = src_right_img_np
+        results['img'] = np.concatenate([src_left_img_np[..., np.newaxis], src_right_img_np[..., np.newaxis]], axis=2)
+        results['img_shape'] = src_left_img_np.shape[:2]
+        results['ori_shape'] = src_left_img_np.shape[:2]
+        return results
+
+    def __repr__(self):
+        repr_str = (f'{self.__class__.__name__}('
+                    f'ignore_empty={self.ignore_empty}, '
+                    f'to_float32={self.to_float32}, '
+                    f"color_type='{self.color_type}', "
+                    f"imdecode_backend='{self.imdecode_backend}', ")
+
+        if self.file_client_args is not None:
+            repr_str += f'file_client_args={self.file_client_args})'
+        else:
+            repr_str += f'backend_args={self.backend_args})'
+
+        return repr_str
+
+
+@TRANSFORMS.register_module()
+class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
+    """Load annotations for semantic segmentation provided by dataset.
+
+    The annotation format is as the following:
+
+    .. code-block:: python
+
+        {
+            # Filename of semantic segmentation ground truth file.
+            'seg_map_path': 'a/b/c'
+        }
+
+    After this module, the annotation has been changed to the format below:
+
+    .. code-block:: python
+
+        {
+            # in str
+            'seg_fields': List
+             # In uint8 type.
+            'gt_seg_map': np.ndarray (H, W)
+        }
+
+    Required Keys:
+
+    - seg_map_path (str): Path of semantic segmentation ground truth file.
+
+    Added Keys:
+
+    - seg_fields (List)
+    - gt_seg_map (np.uint8)
+
+    Args:
+        reduce_zero_label (bool, optional): Whether reduce all label value
+            by 1. Usually used for datasets where 0 is background label.
+            Defaults to None.
+        imdecode_backend (str): The image decoding backend type. The backend
+            argument for :func:``mmcv.imfrombytes``.
+            See :fun:``mmcv.imfrombytes`` for details.
+            Defaults to 'pillow'.
+        backend_args (dict): Arguments to instantiate a file backend.
+            See https://mmengine.readthedocs.io/en/latest/api/fileio.htm
+            for details. Defaults to None.
+            Notes: mmcv>=2.0.0rc4, mmengine>=0.2.0 required.
+    """
+
+    def __init__(
+        self,
+        reduce_zero_label=None,
+        backend_args=None,
+        imdecode_backend='pillow',
+    ) -> None:
+        super().__init__(
+            with_bbox=False,
+            with_label=False,
+            with_seg=True,
+            with_keypoints=False,
+            imdecode_backend=imdecode_backend,
+            backend_args=backend_args)
+        self.reduce_zero_label = reduce_zero_label
+        if self.reduce_zero_label is not None:
+            warnings.warn('`reduce_zero_label` will be deprecated, '
+                          'if you would like to ignore the zero label, please '
+                          'set `reduce_zero_label=True` when dataset '
+                          'initialized')
+        self.imdecode_backend = imdecode_backend
+
+    def _load_seg_map(self, results: dict) -> None:
+        """Private function to load semantic segmentation annotations.
+
+        Args:
+            results (dict): Result dict from :obj:``mmcv.BaseDataset``.
+
+        Returns:
+            dict: The dict contains loaded semantic segmentation annotations.
+        """
+
+        gt_disparity_np = pfm_imread(results['gt_disparity_path'])
+        results['gt_seg_map'] = gt_disparity_np
+        results['seg_fields'].append('gt_seg_map')
+
+    def __repr__(self) -> str:
+        repr_str = self.__class__.__name__
+        repr_str += f'(reduce_zero_label={self.reduce_zero_label}, '
+        repr_str += f"imdecode_backend='{self.imdecode_backend}', "
+        repr_str += f'backend_args={self.backend_args})'
+        return repr_str
 
 
 @TRANSFORMS.register_module()

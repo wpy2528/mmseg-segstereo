@@ -21,7 +21,7 @@ class LDPerceptionSegDataset(BaseSegDataset):
     """
     METAINFO = dict(
         classes = ('background', 'grass', 'soil'),
-        palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0]]
+        palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255]]
     )
     def __init__(self,
                  data_root,
@@ -36,12 +36,12 @@ class LDPerceptionSegDataset(BaseSegDataset):
         if num_classes == 4:
             LDPerceptionSegDataset.METAINFO = dict(
                 classes = ('background', 'grass', 'soil', 'animal'),
-                palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0], [0, 0, 255]]
+                palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255], [0, 0, 255]]
             )
         else:
             LDPerceptionSegDataset.METAINFO = dict(
                 classes = ('background', 'grass', 'soil'),
-                palette = [[128, 0, 128], [0, 255, 0], [255, 255, 0]]
+                palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255]]
             )
         # include和exclude不能同时存在，如果非None，则必须为list
         assert include is None or exclude is None, "include和exclude不能同时存在"

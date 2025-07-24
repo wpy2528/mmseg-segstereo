@@ -12,6 +12,7 @@ from mmengine.utils import ProgressBar
 from mmseg.registry import DATASETS, VISUALIZERS
 from mmseg.utils import register_all_modules
 from mmseg.utils.class_names import get_palette
+from mmseg.datasets.ld_perception_stereo_matching_dataset import LDPerceptionStereoMatchingDataset
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Browse a dataset')
@@ -68,12 +69,14 @@ def main():
         random.shuffle(indexes)
     
     dataset.data_root = dataset.data_root.rstrip("/")
+    assert isinstance(dataset, LDPerceptionStereoMatchingDataset), "必须是双目数据集"
     for index in indexes:
         item = dataset[index]
         img = item['inputs'].permute(1, 2, 0).numpy()
         data_sample = item['data_samples'].numpy()
-        src_image_path = item['data_samples'].img_path
-        src_image_name = osp.basename(src_image_path)
+        left_image_path = item['data_samples'].img_path
+        src_image_name = osp.basename(left_image_path)
+        right_image_path = left_image_path.replace("left", "right")
 
         out_file = osp.join(
             args.output_dir,
@@ -98,12 +101,22 @@ def main():
         else:
             src_image_np = img
             gt_np = data_sample.gt_sem_seg.data.astype(np.uint8)[0]
-            color = dataset.metainfo['palette']
-            colored_mask = np.zeros_like(src_image_np, dtype=np.uint8)
-            for i in range(len(color)):
-                colored_mask[gt_np == i] = color[i]
-            vis_np = cv2.addWeighted(src_image_np, 0.5, colored_mask, 0.5, 0)
-            vis_np = np.concatenate([src_image_np, vis_np], axis=1)
+
+            # 将src_image_np的最后一个轴拆分为left_image_np和right_image_np
+            left_image_np = src_image_np[..., 0]
+            right_image_np = src_image_np[..., 1]
+
+            # 将单通道灰度图转为3通道以便可视化
+            left_image_np_vis = cv2.cvtColor(left_image_np, cv2.COLOR_GRAY2BGR)
+            right_image_np_vis = cv2.cvtColor(right_image_np, cv2.COLOR_GRAY2BGR)
+
+            # 用jet色图可视化gt_np
+            gt_norm = cv2.normalize(gt_np.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+            gt_color_np = cv2.applyColorMap(gt_norm.astype(np.uint8), cv2.COLORMAP_JET)
+
+            # 拼接三张图像
+            vis_np = np.concatenate([left_image_np_vis, right_image_np_vis, gt_color_np], axis=1)
+            
             cv2.imwrite(out_file, vis_np)
         progress_bar.update()
 
