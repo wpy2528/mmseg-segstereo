@@ -1,0 +1,37 @@
+{
+"c4": {
+    "category_fill_priority": ["grassland", "soil", "background", "water", "animal"],
+    "category_map": {
+        "background": 0,
+        "grassland": 1,
+        "water": 0,
+        "soil": 2,
+        "animal": 3
+    },
+    "ignored_categories": ["shadow", "glare", "overexposure"],
+    "same_category_map": {
+        "hedgehog": "animal",
+        "obstacle": "background",
+        "person": "background",
+        "stick": "background",
+        "leaf": "grassland"
+    },
+    "allow_nonexisted_category": false
+},
+
+"extra": {
+    "category_fill_priority": ["background", "occu", "glare", "pure_background"],
+    "category_map": {
+        "background": 0,
+        "occu": 1,
+        "glare": 2,
+        "pure_background": 3
+    },
+    "ignored_categories": [],
+    "same_category_map": {
+        "sky": "glare",
+        "transfer_occu": "occu"
+    },
+    "allow_nonexisted_category": true
+}
+}

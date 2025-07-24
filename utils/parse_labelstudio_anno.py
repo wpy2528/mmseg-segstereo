@@ -9,46 +9,10 @@ from tqdm import tqdm
 from pathlib import Path
 
 
-ENABLE_4_CLASSES = True
-if ENABLE_4_CLASSES:
-    print("ℹ️ 使用4类标注")
-else:
-    print("📕 使用3类标注")
-import time
-time.sleep(2)
-
-category_fill_priority = ["grassland", "soil", "background", "water", "animal"]
-
-if ENABLE_4_CLASSES:
-    category_map = {
-        "background": 0,
-        "grassland": 1,
-        "water": 0,
-        "soil": 2,
-        "animal": 3
-    }
-else:
-    category_map = {
-        "background": 0,
-        "grassland": 1,
-        "water": 0,
-        "soil": 2,
-        "animal": 0
-    }
-
-ignored_categories = ["shadow", "glare", "overexposure"]
-
-same_category_map = {
-    "hedgehog": "animal",
-    "obstacle": "background",
-    "person": "background",
-    "stick": "background",
-    "leaf": "grassland",
-}
-
 def parse_labelstudio_to_coco(
     src_anno_path,
     dst_dataset_dir,
+    category_config,
     label_studio_prefix="/data/local-files/?d=data_pool/",
     real_prefix="/data/playground/label_anything/data_pool/"
 ):
@@ -59,6 +23,13 @@ def parse_labelstudio_to_coco(
         src_anno_jd = src_anno_path
     else:
         raise ValueError(f"src_anno_path must be a string or a dict, but got {type(src_anno_path)}")
+
+    assert isinstance(category_config, dict), f"category_config must be a dict, but got {type(category_config)}"
+    category_fill_priority = category_config['category_fill_priority']
+    category_map = category_config['category_map']
+    ignored_categories = category_config['ignored_categories']
+    same_category_map = category_config['same_category_map']
+    allow_nonexisted_category = category_config['allow_nonexisted_category']
 
     for anno in tqdm(src_anno_jd):
         src_image_path = anno['data']['image']
@@ -78,7 +49,12 @@ def parse_labelstudio_to_coco(
                 continue
             if polygon_catogry in same_category_map:
                 polygon_catogry = same_category_map[polygon_catogry]
-            assert polygon_catogry in category_map, f"{src_image_path}  polygon category {polygon_catogry} not found in {category_map}"
+            
+            if polygon_catogry not in category_map:
+                if allow_nonexisted_category:
+                    continue
+                else:
+                    raise ValueError(f"{src_image_path}  polygon category {polygon_catogry} not found in {category_map}")
             polygon = e['value']['points']
             polygon_np = np.array(polygon) / 100 * (src_image_np.shape[1], src_image_np.shape[0])
             polygon_np = polygon_np.round().astype(np.int32)

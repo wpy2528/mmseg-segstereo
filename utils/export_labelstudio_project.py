@@ -39,8 +39,14 @@ def main():
     parser = argparse.ArgumentParser(description="Export Label Studio project annotations by project name")
     parser.add_argument("project_name", type=str, help="项目名称（Label Studio 中显示的名字）")
     parser.add_argument("dst_dataset_dir", type=str, help="导出保存目录")
+    parser.add_argument("category_config_name", type=str, help="类别配置名称")
 
     args = parser.parse_args()
+    
+    category_config = json.load(open("utils/category_configs.json"))[args.category_config_name]
+    print(f"使用 {args.category_config_name} 类别配置")
+    time.sleep(2)
+    
     project_name = args.project_name
     dst_dataset_dir = args.dst_dataset_dir.rstrip("/")
     if os.path.exists(dst_dataset_dir):
@@ -65,7 +71,8 @@ def main():
     data = export_project_annotations(project_id)
     dst_anno_path = os.path.join(dst_dataset_dir, f"{project_name}.json")
     labelstudio_jd = json.loads(data)
-    parse_labelstudio_to_coco(labelstudio_jd, dst_dataset_dir)
+    parse_labelstudio_to_coco(labelstudio_jd, dst_dataset_dir, category_config)
+    print(f"✅ 导出完成，保存到 {dst_dataset_dir}")
 
 if __name__ == "__main__":
     main()
