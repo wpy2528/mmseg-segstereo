@@ -36,6 +36,7 @@ from .stdc_head import STDCHead
 from .uper_head import UPerHead
 from .vpd_depth_head import VPDDepthHead
 from .trival_head import TrivalHead
+from .stereo_matching_head import StereoMatchingHead
 from .fcn_head_with_upsample import FCNHeadWithUpsample
 
 __all__ = [
@@ -47,5 +48,5 @@ __all__ = [
     'SegformerHead', 'ISAHead', 'STDCHead', 'IterativeDecodeHead',
     'KernelUpdateHead', 'KernelUpdator', 'MaskFormerHead', 'Mask2FormerHead',
     'LightHamHead', 'PIDHead', 'DDRHead', 'VPDDepthHead', 'SideAdapterCLIPHead',
-    'TrivalHead', 'FCNHeadWithUpsample'
+    'TrivalHead', 'FCNHeadWithUpsample', 'StereoMatchingHead'
 ]
