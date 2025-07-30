@@ -138,31 +138,7 @@ class IoUMetric(BaseMetric):
                 sample_metrics['img_path'] = sample_path
                 per_sample_metrics.append(sample_metrics)
 
-            # 保存每个样本的指标结果
-            import json
-            import os.path as osp
-            metrics_file = osp.join(self.output_dir, 'per_sample_metrics.json')
-            with open(metrics_file, 'w') as f:
-                # 将numpy数组转换为普通Python数值类型
-                metrics_list = []
-                for metrics in per_sample_metrics:
-                    metrics_dict = {}
-                    for k, v in metrics.items():
-                        if isinstance(v, np.ndarray):
-                            v_list = v.tolist()
-                            # 将list中的nan替换为None
-                            if isinstance(v_list, list):
-                                v_list = [None if isinstance(x, float) and np.isnan(x) else x for x in v_list]
-                            metrics_dict[k] = v_list
-                        elif isinstance(v, np.float32) or isinstance(v, np.float64):
-                            metrics_dict[k] = float(v)
-                        elif v == np.nan:
-                            metrics_dict[k] = None
-                        else:
-                            metrics_dict[k] = v
-                    metrics_list.append(metrics_dict)
-                json.dump(metrics_list, f, indent=2)
-            logger.info(f'Per sample metrics saved to {metrics_file}')
+
         # convert list of tuples to tuple of lists, e.g.
         # [(A_1, B_1, C_1, D_1), ...,  (A_n, B_n, C_n, D_n)] to
         # ([A_1, ..., A_n], ..., [D_1, ..., D_n])
@@ -206,7 +182,7 @@ class IoUMetric(BaseMetric):
         print_log('per class results:', logger)
         print_log('\n' + class_table_data.get_string(), logger=logger)
 
-        return metrics
+        return metrics, per_sample_metrics
 
     @staticmethod
     def intersect_and_union(pred_label: torch.tensor, label: torch.tensor,
