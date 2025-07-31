@@ -19,7 +19,7 @@
     "allow_nonexisted_category": false
 },
 
-"extra": {
+"occlusion": {
     "category_fill_priority": ["background", "occu", "glare", "pure_background"],
     "category_map": {
         "background": 0,

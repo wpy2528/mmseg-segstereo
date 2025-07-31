@@ -9,14 +9,15 @@ from tqdm import tqdm
 
 from utils.convert_png_label_to_labelstudio import convert_mask_to_labelme, convert_labelme_to_labelstudio
 
-SERVER_URL = 'http://192.168.160.52:5000/infer'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("src_image_dir")
 parser.add_argument("vis_save_dir")
 parser.add_argument("--save_labelstudio_json", action="store_true", help="是否保存labelstudio的json文件")
+parser.add_argument("--port", type=int, default=5000, help="The port of the server.")
 args = parser.parse_args()
 
+SERVER_URL = f'http://192.168.160.52:{args.port}/infer'
 
 if __name__ == "__main__":
     src_image_dir = args.src_image_dir

@@ -1,7 +1,7 @@
 import os
 import argparse
 from functools import partial
-
+import time
 import torch
 
 import onnx
@@ -45,6 +45,16 @@ if __name__ == "__main__":
     parser.add_argument("checkpoint", type=str)
     parser.add_argument("--input_hw", nargs="+", type=int, required=True)
     args = parser.parse_args()
+    
+    if '/' not in args.checkpoint:
+        config_name = os.path.basename(args.config)[:-3]
+        args.checkpoint = os.path.join("work_dirs", config_name, args.checkpoint)
+        print(f"给定的checkpoint不是完整路径，拓展为 {args.checkpoint}")
+        time.sleep(1)
+    if not args.checkpoint.endswith(".pth"):
+        with open(args.checkpoint, "r") as f:
+            args.checkpoint = f.read().strip()
+    
     checkpoint_path = args.checkpoint
     if os.path.basename(checkpoint_path) == "last_checkpoint":
         with open(checkpoint_path, "r") as f:
