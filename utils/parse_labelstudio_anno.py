@@ -63,6 +63,21 @@ def parse_labelstudio_to_coco(
         polygon_catgory_pairs.sort(key=lambda x: category_fill_priority.index(x[1]))
 
         for polygon_np, polygon_catogry in polygon_catgory_pairs:
+            # # 如果当前多边形类别为glare，则将高度方向上35%以下的多边形区域删除
+            # if polygon_catogry == "glare":
+            #     h = src_image_np.shape[0]
+            #     cutoff = int(h * 0.35)
+            #     # 创建一个与图像同样大小的mask
+            #     temp_mask_np = np.zeros(src_image_np.shape[:2], dtype=np.uint8)
+            #     cv2.fillPoly(temp_mask_np, [polygon_np], 1)
+            #     # 将高度方向上35%以下的区域置为0
+            #     temp_mask_np[cutoff:, :] = 0
+            #     # 重新提取剩余的多边形轮廓
+            #     contours, _ = cv2.findContours(temp_mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            #     for cnt in contours:
+            #         if cnt.shape[0] >= 3:
+            #             cv2.fillPoly(src_mask_np, [cnt], category_map[polygon_catogry])
+            #     continue  # 已经处理完glare，跳过后续的fillPoly
             cv2.fillPoly(src_mask_np, [polygon_np], category_map[polygon_catogry])
 
         dst_image_path = os.path.join(dst_dataset_dir, "images", os.path.basename(src_image_path)).replace(".png", ".jpg")

@@ -41,7 +41,7 @@ def infer_image(model, src_image_path, src_image_np, args):
     else:
         mask_t = result._pred_sem_seg.data
         mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
-        vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 0.5, 0)
+        vis = cv2.addWeighted(src_image_np, 1, get_color_mask(mask_np), 3, 0)
         cv2.putText(vis, "pred", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     res = np.hstack([src_image_np, vis])
     if args.save_pred_mask:
@@ -49,9 +49,11 @@ def infer_image(model, src_image_path, src_image_np, args):
         mask_np = mask_t.cpu().numpy().astype(np.uint8)[0]
         mask_np = cv2.cvtColor(mask_np, cv2.COLOR_GRAY2BGR)
         res = np.hstack([res, mask_np])
+    postfix = ".jpg"
     if draw_gt:
         res = np.hstack([res, vis_gt])
-    cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", ".png")), res)
+        postfix = ".png"
+    cv2.imwrite(os.path.join(args.out_file, os.path.basename(src_image_path).replace(".jpg", postfix)), res)
 
 
 def main():
@@ -81,11 +83,11 @@ def main():
         help='Whether to display the class labels.')
     parser.add_argument(
         '--title', default='result', help='The image identifier.')
+    parser.add_argument("--port", type=int, default=5000, help='The port of the server.')
     args = parser.parse_args()
 
     if '/' not in args.checkpoint:
-        config_name = os.path.basename(args.config)[:-3]
-        args.checkpoint = os.path.join("work_dirs", config_name, args.checkpoint)
+        args.checkpoint = os.path.join("work_dirs", os.path.splitext(args.config.split("configs/")[-1])[0], args.checkpoint)
         print(f"给定的checkpoint不是完整路径，拓展为 {args.checkpoint}")
         time.sleep(1)
     if not args.checkpoint.endswith(".pth"):
@@ -137,7 +139,7 @@ def main():
             _, buffer = cv2.imencode('.png', res)
             return send_file(BytesIO(buffer.tobytes()), mimetype='image/png')
             
-        app.run(host='0.0.0.0', port=5000)
+        app.run(host='0.0.0.0', port=args.port)
         return
     
     src_image_paths = [args.img]
@@ -145,7 +147,7 @@ def main():
         with open(args.img, "r") as f:
             src_image_paths = [line.strip().split()[0] for line in f.readlines()]
     elif os.path.isdir(args.img):
-        src_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True)
+        src_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
         # 排除包含/labels/的图片
         src_image_paths = [path for path in src_image_paths if "/labels/" not in path]
             
