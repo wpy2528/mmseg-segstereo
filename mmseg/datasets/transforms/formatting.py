@@ -8,6 +8,7 @@ from mmengine.structures import PixelData
 
 from mmseg.registry import TRANSFORMS
 from mmseg.structures import SegDataSample
+from mmseg.structures import StereoMatchingDataSample
 
 
 @TRANSFORMS.register_module()
@@ -139,7 +140,7 @@ class PackStereoMatchingInputs(BaseTransform):
                   'flip_direction')
     """
     def __init__(self,
-                 meta_keys=('img_path', 'seg_map_path', 'ori_shape',
+                 meta_keys=('left_img_path', 'right_img_path', 'disp_map_path', 'ori_shape',
                             'img_shape', 'pad_shape', 'scale_factor', 'flip',
                             'flip_direction', 'reduce_zero_label')):
         self.meta_keys = meta_keys
@@ -158,6 +159,9 @@ class PackStereoMatchingInputs(BaseTransform):
                 sample.
         """
         packed_results = dict()
+        assert 'img' not in results, "截至执行打包之前 img 不能在results里"
+        results['img'] = np.concatenate([results['left_img'][..., np.newaxis], results['right_img'][..., np.newaxis]], axis=2)
+
         if 'img' in results:
             img = results['img']
             if len(img.shape) < 3:
@@ -169,34 +173,29 @@ class PackStereoMatchingInputs(BaseTransform):
                 img = to_tensor(img).contiguous()
             packed_results['inputs'] = img
 
-        data_sample = SegDataSample()
-        if 'gt_seg_map' in results:
-            if len(results['gt_seg_map'].shape) == 2:
-                data = to_tensor(results['gt_seg_map'][None,
-                                                       ...].astype(np.int64))
+        data_sample = StereoMatchingDataSample()
+        if 'left_disp' in results:
+            if len(results['left_disp'].shape) == 2:
+                data = to_tensor(results['left_disp'][None,
+                                                       ...])
             else:
                 warnings.warn('Please pay attention your ground truth '
                               'segmentation map, usually the segmentation '
                               'map is 2D, but got '
-                              f'{results["gt_seg_map"].shape}')
-                if len(results['gt_seg_map'].shape) == 3:
+                              f'{results["left_disp"].shape}')
+                if len(results['left_disp'].shape) == 3:
                     warnings.warn('3通道 视为普通图像处理')
-                    data = to_tensor(results['gt_seg_map'].transpose(2, 0, 1).astype(np.int64))
+                    data = to_tensor(results['left_disp'].transpose(2, 0, 1).astype(np.int64))
                 else:
-                    raise ValueError(f'3通道我都忍你了，还搞个 {results["gt_seg_map"].shape} 差不多得了')
-            gt_sem_seg_data = dict(data=data)
-            data_sample.gt_sem_seg = PixelData(**gt_sem_seg_data)
+                    raise ValueError(f'3通道我都忍你了，还搞个 {results["left_disp"].shape} 差不多得了')
+            gt_disp_data = dict(data=data)
+            data_sample.gt_disp = PixelData(**gt_disp_data)
 
-        if 'gt_edge_map' in results:
-            gt_edge_data = dict(
-                data=to_tensor(results['gt_edge_map'][None,
+        if 'disp_mask' in results:
+            gt_disp_mask_data = dict(
+                data=to_tensor(results['disp_mask'][None,
                                                       ...].astype(np.int64)))
-            data_sample.set_data(dict(gt_edge_map=PixelData(**gt_edge_data)))
-
-        if 'gt_depth_map' in results:
-            gt_depth_data = dict(
-                data=to_tensor(results['gt_depth_map'][None, ...]))
-            data_sample.set_data(dict(gt_depth_map=PixelData(**gt_depth_data)))
+            data_sample.set_data(dict(disp_mask=PixelData(**gt_disp_mask_data)))
 
         img_meta = {}
         for key in self.meta_keys:

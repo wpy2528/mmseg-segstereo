@@ -38,7 +38,8 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          PhotoMetricDistortion, RandomCrop, RandomCutOut,
                          RandomMosaic, RandomRotate, RandomRotFlip, Rerange,
                          ResizeShortestEdge, ResizeToMultiple, RGB2Gray,
-                         SegRescale, LoadStereoImages, LoadStereoMatchingAnnotations)
+                         SegRescale, LoadStereoImages, LoadStereoMatchingAnnotations,
+                         CREStereoAugmentor)
 from .voc import PascalVOCDataset
 from .ld_perception_seg_dataset import LDPerceptionSegDataset
 from .ld_perception_pretrain_dataset import LDPerceptionPretrainDataset
@@ -72,4 +73,5 @@ __all__ = [
     'LDPerceptionStereoMatchingDataset',
     'LoadStereoImages',
     'LoadStereoMatchingAnnotations',
+    'CREStereoAugmentor'
 ]

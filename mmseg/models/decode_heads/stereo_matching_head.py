@@ -1,21 +1,14 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+from typing import List
 from mmseg.registry import MODELS
 from .decode_head import BaseDecodeHead
-# Copyright (c) OpenMMLab. All rights reserved.
-import warnings
-from abc import ABCMeta, abstractmethod
-from typing import List, Tuple
 
 import torch
 import torch.nn as nn
-from mmengine.model import BaseModule
 from torch import Tensor
 
 from mmseg.registry import MODELS
-from mmseg.structures import build_pixel_sampler
 from mmseg.utils import ConfigType, SampleList
 from ..losses import accuracy
-from ..utils import resize
 
 @MODELS.register_module()
 class StereoMatchingHead(BaseDecodeHead):
@@ -76,6 +69,12 @@ class StereoMatchingHead(BaseDecodeHead):
             loss['acc_seg'] = accuracy(
                 seg_logits, seg_label, ignore_index=self.ignore_index)
         return loss
+
+    def _stack_batch_gt(self, batch_data_samples: SampleList) -> Tensor:
+        gt_disps = [
+            data_sample.gt_disp.data for data_sample in batch_data_samples
+        ]
+        return torch.stack(gt_disps, dim=0)
 
     def predict_by_feat(self, seg_logits: Tensor,
                         batch_img_metas: List[dict]) -> Tensor:

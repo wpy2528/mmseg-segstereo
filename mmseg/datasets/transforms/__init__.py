@@ -24,6 +24,8 @@ from .imgaug_for_mm.crop import CropTop
 from .imgaug_for_mm.image_quality_aug import ImageQualityAug
 from .imgaug_for_mm.dilate_soil import DilateSoilMask
 from .imgaug_for_mm.random_masking import RandomMasking
+
+from .stereo_aug.cre_stereo_augmentor import CREStereoAugmentor
 # yapf: enable
 __all__ = [
     'LoadAnnotations', 'RandomCrop', 'BioMedical3DRandomCrop', 'SegRescale',
@@ -36,6 +38,6 @@ __all__ = [
     'RandomRotFlip', 'Albu', 'LoadSingleRSImageFromFile', 'ConcatCDInput',
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
-    
-    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask', 'RandomMasking', 'LoadStereoImages', 'LoadStereoMatchingAnnotations'
+    'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask', 'RandomMasking', 'LoadStereoImages', 'LoadStereoMatchingAnnotations',
+    'CREStereoAugmentor'
 ]

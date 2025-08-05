@@ -1,16 +1,16 @@
 # ===== Global Constants =====
 NUM_CLASSES = 4
-CROP_HW = (320, 640)
-BATCH_PAD_HW = (320, 640)
+CROP_HW = (320, 512)
+BATCH_PAD_HW = (320, 512)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
 data_preprocessor = dict(
     type='SegDataPreProcessor',
-    mean=[0.0, 0.0],
+    mean=[0.0, 0.0], # 输入的时候把grayscale的左目和右目沿着通道轴拼接，所以mean和std都是两个
     std=[255.0, 255.0],
     size=BATCH_PAD_HW,
-    bgr_to_rgb=True,
+    bgr_to_rgb=False, # 不能交换通道（不能交换左右目）
     pad_val=0,
     seg_pad_val=255
 )
@@ -42,7 +42,8 @@ dataset_type = 'LDPerceptionStereoMatchingDataset'
 train_pipeline = [
     dict(type='LoadStereoImages'),
     dict(type='LoadStereoMatchingAnnotations'),
-    dict(type='RandomCrop', crop_size=CROP_HW),
+    # dict(type='RandomCrop', crop_size=CROP_HW),
+    dict(type='CREStereoAugmentor'),
     # dict(
     #     type='Resize',
     #     scale=RESIZE_WH,
@@ -54,8 +55,8 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadStereoImages'),
-    dict(type='RandomCrop', crop_size=CROP_HW),
     dict(type='LoadStereoMatchingAnnotations'),
+    dict(type='RandomCrop', crop_size=CROP_HW),
     dict(type='PackStereoMatchingInputs')
 ]
 
@@ -140,7 +141,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = "work_dirs/stdc2_grass-c4-320x272-penalty_fp_bg_0627/last_checkpoint"
+load_from = None
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)

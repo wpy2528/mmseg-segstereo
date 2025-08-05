@@ -71,32 +71,14 @@ class LoadStereoImages(BaseTransform):
         src_left_img_np = cv2.imread(src_left_path, cv2.IMREAD_GRAYSCALE)
         # 加载右图
         src_right_img_np = cv2.imread(src_right_path, cv2.IMREAD_GRAYSCALE)
-        
-        # try:
-        #     if self.file_client_args is not None:
-        #         file_client = fileio.FileClient.infer_client(
-        #             self.file_client_args, filename)
-        #         img_bytes = file_client.get(filename)
-        #     else:
-        #         img_bytes = fileio.get(
-        #             filename, backend_args=self.backend_args)
-        #     img = mmcv.imfrombytes(
-        #         img_bytes, flag=self.color_type, backend=self.imdecode_backend)
-        # except Exception as e:
-        #     if self.ignore_empty:
-        #         return None
-        #     else:
-        #         raise e
-        # # in some cases, images are not read successfully, the img would be
-        # # `None`, refer to https://github.com/open-mmlab/mmpretrain/issues/1427
-        # assert img is not None, f'failed to load image: {filename}'
+
         if self.to_float32:
             src_left_img_np = src_left_img_np.astype(np.float32)
             src_right_img_np = src_right_img_np.astype(np.float32)
 
-        # results['src_left_img'] = src_left_img_np
-        # results['src_right_img'] = src_right_img_np
-        results['img'] = np.concatenate([src_left_img_np[..., np.newaxis], src_right_img_np[..., np.newaxis]], axis=2)
+        results['left_img'] = src_left_img_np
+        results['right_img'] = src_right_img_np
+        # results['img'] = np.concatenate([src_left_img_np[..., np.newaxis], src_right_img_np[..., np.newaxis]], axis=2)
         results['img_shape'] = src_left_img_np.shape[:2]
         results['ori_shape'] = src_left_img_np.shape[:2]
         return results
@@ -195,8 +177,8 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
         """
 
         gt_disparity_np = pfm_imread(results['gt_disparity_path'])
-        results['gt_seg_map'] = gt_disparity_np
-        results['seg_fields'].append('gt_seg_map')
+        results['left_disp'] = gt_disparity_np
+        results['seg_fields'].append('left_disp')
 
     def __repr__(self) -> str:
         repr_str = self.__class__.__name__
