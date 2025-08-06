@@ -1,7 +1,7 @@
 # ===== Global Constants =====
 NUM_CLASSES = 4
-CROP_HW = (320, 512)
-BATCH_PAD_HW = (320, 512)
+CROP_HW = (384, 512)
+BATCH_PAD_HW = (384, 512)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -43,7 +43,7 @@ train_pipeline = [
     dict(type='LoadStereoImages'),
     dict(type='LoadStereoMatchingAnnotations'),
     # dict(type='RandomCrop', crop_size=CROP_HW),
-    dict(type='CREStereoAugmentor'),
+    dict(type='CREStereoAugmentor', image_hw=CROP_HW),
     # dict(
     #     type='Resize',
     #     scale=RESIZE_WH,

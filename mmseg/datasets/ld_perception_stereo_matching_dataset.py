@@ -116,16 +116,15 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             f.close()
             
         for line in lines:
-            src_left_path = line
-            src_right_path = src_left_path.replace("/left/", "/right/")
-            gt_disparity_path = src_left_path.replace("/frames_cleanpass/", "/disparity/").replace(".png", ".pfm")
+            left_img_path = line
+            right_img_path = left_img_path.replace("/left/", "/right/")
+            left_disp_path = left_img_path.replace("/frames_cleanpass/", "/disparity/").replace(".png", ".pfm")
             data_info = dict(
-                src_left_path=src_left_path,
-                src_right_path=src_right_path,
-                gt_disparity_path=gt_disparity_path
+                left_img_path=left_img_path,
+                right_img_path=right_img_path,
+                left_disp_path=left_disp_path
             )
-            # 用视差图作为分割图
-            data_info['gt_disparity_path'] = gt_disparity_path
+            data_info['left_disp_path'] = left_disp_path
             data_info['label_map'] = None
             data_info['reduce_zero_label'] = False
             data_info['seg_fields'] = []

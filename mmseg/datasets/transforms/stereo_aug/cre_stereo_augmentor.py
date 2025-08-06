@@ -15,15 +15,13 @@ import random
 class CREStereoAugmentor(BaseTransform):
     def __init__(
         self,
-        image_height=384,
-        image_width=512,
+        image_hw = (384, 512),
         max_disp=256,
         scale_min=0.6,
         scale_max=1.0,
         seed=0,
     ):
-        self.image_height = image_height
-        self.image_width = image_width
+        self.image_height, self.image_width = image_hw
         self.max_disp = max_disp
         self.scale_min = scale_min
         self.scale_max = scale_max

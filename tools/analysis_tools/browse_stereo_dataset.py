@@ -74,9 +74,9 @@ def main():
         item = dataset[index]
         img = item['inputs'].permute(1, 2, 0).numpy()
         data_sample = item['data_samples'].numpy()
-        left_image_path = item['data_samples'].img_path
+        left_image_path = item['data_samples'].left_img_path
         src_image_name = osp.basename(left_image_path)
-        right_image_path = left_image_path.replace("left", "right")
+        right_image_path = item['data_samples'].right_img_path
 
         out_file = osp.join(
             args.output_dir,
@@ -100,7 +100,7 @@ def main():
             
         else:
             src_image_np = img
-            gt_np = data_sample.gt_sem_seg.data.astype(np.uint8)[0]
+            left_disp_np = data_sample.left_disp.data.astype(np.uint8)[0]
 
             # 将src_image_np的最后一个轴拆分为left_image_np和right_image_np
             left_image_np = src_image_np[..., 0]
@@ -111,7 +111,7 @@ def main():
             right_image_np_vis = cv2.cvtColor(right_image_np, cv2.COLOR_GRAY2BGR)
 
             # 用jet色图可视化gt_np
-            gt_norm = cv2.normalize(gt_np.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+            gt_norm = cv2.normalize(left_disp_np.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
             gt_color_np = cv2.applyColorMap(gt_norm.astype(np.uint8), cv2.COLORMAP_JET)
 
             # 拼接三张图像

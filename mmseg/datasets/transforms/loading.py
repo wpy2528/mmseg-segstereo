@@ -63,14 +63,15 @@ class LoadStereoImages(BaseTransform):
             dict: The dict contains loaded image and meta information.
         """
 
-        src_left_path = results['src_left_path']
-        src_right_path = results['src_right_path']
-        results['img_path'] = src_left_path
+        left_img_path = results['left_img_path']
+        right_img_path = results['right_img_path']
+        results['left_img_path'] = left_img_path
+        results['right_img_path'] = right_img_path
 
         # 加载左图
-        src_left_img_np = cv2.imread(src_left_path, cv2.IMREAD_GRAYSCALE)
+        src_left_img_np = cv2.imread(left_img_path, cv2.IMREAD_GRAYSCALE)
         # 加载右图
-        src_right_img_np = cv2.imread(src_right_path, cv2.IMREAD_GRAYSCALE)
+        src_right_img_np = cv2.imread(right_img_path, cv2.IMREAD_GRAYSCALE)
 
         if self.to_float32:
             src_left_img_np = src_left_img_np.astype(np.float32)
@@ -176,8 +177,8 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
             dict: The dict contains loaded semantic segmentation annotations.
         """
 
-        gt_disparity_np = pfm_imread(results['gt_disparity_path'])
-        results['left_disp'] = gt_disparity_np
+        left_disp_np = pfm_imread(results['left_disp_path'])
+        results['left_disp'] = left_disp_np
         results['seg_fields'].append('left_disp')
 
     def __repr__(self) -> str:
