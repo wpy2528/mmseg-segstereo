@@ -60,9 +60,6 @@ test_pipeline = [
     dict(type='PackStereoMatchingInputs')
 ]
 
-TEST_FOLDERS = ['misseg_common', 'misseg_20250521', 'hedgehog_data']
-REPEAT_FOLDERS = {'oversea_misseg_soil_20250625': 2, '20250507_misseg_soil': 2, '2501AHGE000A0092': 2, 'misseg_leaf_24507HGD00070081': 1, '25062HGG00020016': 1, 'misseg_soil': 1}
-
 train_dataloader = dict(
     batch_size=16,
     num_workers=4,
@@ -144,7 +141,7 @@ log_level = 'INFO'
 load_from = None
 resume = False
 
-train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=100)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 

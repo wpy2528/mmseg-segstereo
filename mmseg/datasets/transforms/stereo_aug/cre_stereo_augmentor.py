@@ -163,7 +163,7 @@ class CREStereoAugmentor(BaseTransform):
             borderValue=0,
         )
 
-        # 3. add random occlusion to right image
+        # ? 3. 随机抹掉右图的一部分 这尼玛靠谱吗？
         if self.rng.binomial(1, 0.5):
             sx = int(self.rng.uniform(50, 100))
             sy = int(self.rng.uniform(50, 100))
