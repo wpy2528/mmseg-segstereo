@@ -179,6 +179,10 @@ class IoUMetric(BaseMetric):
         for key, val in ret_metrics_class.items():
             class_table_data.add_column(key, val)
 
+        for i, iou in enumerate(ret_metrics_class['IoU']):
+            k = f"Iou_{class_names[i]}"
+            metrics[k] = iou
+
         print_log('per class results:', logger)
         print_log('\n' + class_table_data.get_string(), logger=logger)
 
