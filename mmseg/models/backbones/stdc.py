@@ -418,5 +418,6 @@ class STDCContextPathNet(BaseModule):
         # `outs[0]` is outputted for `STDCHead` auxiliary head.
         # Two feature maps of `arms_out` are outputted for auxiliary head.
         # `feat_fuse` is outputted for decoder head.
+        # ! 推理只有feat_fuse起作用
         outputs = [outs[0]] + list(arms_out) + [feat_fuse]
         return tuple(outputs)

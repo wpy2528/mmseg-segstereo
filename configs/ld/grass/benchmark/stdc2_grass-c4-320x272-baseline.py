@@ -26,7 +26,7 @@ model = dict(
             type='STDCNet',
             stdc_type='STDCNet2',
             in_channels=3,
-            channels=(32, 64, 256, 512, 1024), # 最后三个是backbone的输出feature的通道数
+            channels=(32, 64, 256, 512, 1024),
             num_convs=4,
             norm_cfg=norm_cfg,
             act_cfg=dict(type='ReLU'),
@@ -37,15 +37,15 @@ model = dict(
                 checkpoint='https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/stdc/stdc2_20220308-7dbd9127.pth'
             )
         ),
-        last_in_channels=(1024, 512), # 两个ARM的输入通道数 对应上边backbone里的channels最后两个
-        out_channels=128, # ARM的输出通道数
-        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4) # in_channels = backbone.channels[-3:][0] + out_channels
+        last_in_channels=(1024, 512),
+        out_channels=128,
+        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4)
     ),
     decode_head=dict(
         type='FCNHead',
-        in_channels=256, # 和ffm_cfg里的out_channels一致
+        in_channels=256,
         in_index=3,
-        channels=256, # 中间层的通道数
+        channels=256,
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
@@ -125,8 +125,6 @@ test_pipeline = [
     dict(type='PackSegInputs')
 ]
 
-TEST_FOLDERS = ['misseg_common', 'misseg_20250521', 'hedgehog_data']
-REPEAT_FOLDERS = {'oversea_misseg_soil_20250625': 2, '20250507_misseg_soil': 2, '2501AHGE000A0092': 2, 'misseg_leaf_24507HGD00070081': 1, '25062HGG00020016': 1, 'misseg_soil': 1}
 
 train_dataloader = dict(
     batch_size=16,
@@ -136,10 +134,10 @@ train_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c4',
+        data_root='.',
+        ann_file='configs/ld/grass/benchmark/benchmark_train.txt',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
-        repeat=REPEAT_FOLDERS,
         test_mode=False
     )
 )
@@ -151,10 +149,10 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='/home/mck/datasets/grass_seg_data_c4',
+        data_root='.',
+        ann_file='configs/ld/grass/benchmark/benchmark_val.txt',
         num_classes=NUM_CLASSES,
         pipeline=test_pipeline,
-        include=TEST_FOLDERS,
         test_mode=True
     )
 )
@@ -208,7 +206,7 @@ visualizer = dict(
 
 log_processor = dict(by_epoch=True)
 log_level = 'INFO'
-load_from = "work_dirs/stdc2_grass-c4-320x272-penalty_fp_bg_0627/last_checkpoint"
+load_from = None
 resume = False
 
 train_cfg = dict(by_epoch=True, max_epochs=70, val_interval=1)
