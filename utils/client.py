@@ -24,10 +24,15 @@ if __name__ == "__main__":
     src_image_dir = src_image_dir.rstrip("/")
     src_image_folder_name = os.path.basename(src_image_dir)
     vis_save_dir = args.vis_save_dir
-    if os.path.isfile(src_image_dir):
+    if any([src_image_dir.endswith(x) for x in [".jpg", ".png", ".bmp"]]):
         src_image_paths = [src_image_dir]
-    else:
+    elif os.path.isdir(src_image_dir):
         src_image_paths = glob.glob(os.path.join(src_image_dir, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(src_image_dir, "**", "*.png"), recursive=True) 
+    elif src_image_dir.endswith(".txt"):
+        with open(src_image_dir, "r") as f:
+            src_image_paths = [line.strip() for line in f.readlines()]
+    else:
+        raise ValueError(f"src_image_dir is not a file or directory: {src_image_dir}")
     
     
     os.makedirs(vis_save_dir, exist_ok=True)

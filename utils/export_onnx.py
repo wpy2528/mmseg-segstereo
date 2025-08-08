@@ -47,8 +47,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if '/' not in args.checkpoint:
-        config_name = os.path.basename(args.config)[:-3]
-        args.checkpoint = os.path.join("work_dirs", config_name, args.checkpoint)
+        args.checkpoint = os.path.join("work_dirs", os.path.splitext(args.config.split("configs/")[-1])[0], args.checkpoint)
         print(f"给定的checkpoint不是完整路径，拓展为 {args.checkpoint}")
         time.sleep(1)
     if not args.checkpoint.endswith(".pth"):
