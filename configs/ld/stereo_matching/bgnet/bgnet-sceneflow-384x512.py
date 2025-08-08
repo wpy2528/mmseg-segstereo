@@ -17,7 +17,7 @@ data_preprocessor = dict(
 
 # ===== Model Settings =====
 model = dict(
-    type='EncoderDecoder',
+    type='DepthEstimator',
     data_preprocessor=data_preprocessor,
     backbone=dict(
         type='BGNet_Plus'),
@@ -56,7 +56,6 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadStereoImages'),
     dict(type='LoadStereoMatchingAnnotations'),
-    dict(type='RandomCrop', crop_size=CROP_HW),
     dict(type='PackStereoMatchingInputs')
 ]
 

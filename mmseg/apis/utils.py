@@ -13,7 +13,7 @@ def _preprare_data(imgs: ImageType, model: BaseModel):
 
     cfg = model.cfg
     for t in cfg.test_pipeline:
-        if t.get('type') == 'LoadAnnotations':
+        if t.get('type') in ['LoadAnnotations', 'LoadStereoMatchingAnnotations']:
             cfg.test_pipeline.remove(t)
 
     is_batch = True
@@ -32,6 +32,8 @@ def _preprare_data(imgs: ImageType, model: BaseModel):
     for img in imgs:
         if isinstance(img, np.ndarray):
             data_ = dict(img=img)
+        elif isinstance(img, dict):
+            data_ = img
         else:
             data_ = dict(img_path=img)
         data_ = pipeline(data_)

@@ -382,11 +382,11 @@ class DepthEstimator(EncoderDecoder):
                     size=img_meta['ori_shape'],
                     mode='bilinear',
                     align_corners=self.align_corners,
-                    warning=False).squeeze(0)
+                    warning=False).squeeze(0) # fixme 乘以横向resize倍数
             else:
                 i_depth = depth[i]
 
             data_samples[i].set_data(
-                {'pred_depth_map': PixelData(**{'data': i_depth})})
+                {'pred_disp': PixelData(**{'data': i_depth})})
 
         return data_samples

@@ -65,9 +65,6 @@ class LoadStereoImages(BaseTransform):
 
         left_img_path = results['left_img_path']
         right_img_path = results['right_img_path']
-        results['left_img_path'] = left_img_path
-        results['right_img_path'] = right_img_path
-
         # 加载左图
         src_left_img_np = cv2.imread(left_img_path, cv2.IMREAD_GRAYSCALE)
         # 加载右图
