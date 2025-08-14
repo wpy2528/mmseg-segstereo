@@ -12,6 +12,7 @@ from mmengine.logging import MMLogger, print_log
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseSegDataset
 
+PALETTE = [[128, 0, 128], [0, 255, 0], [0, 255, 255], [0, 0, 255]]
 @DATASETS.register_module()
 class LDPerceptionSegDataset(BaseSegDataset):
     """乐动割草机分割数据集
@@ -21,11 +22,11 @@ class LDPerceptionSegDataset(BaseSegDataset):
     """
     METAINFO = dict(
         classes = ('background', 'grass', 'soil'),
-        palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255]]
+        palette = PALETTE
     )
     def __init__(self,
                  data_root,
-                 num_classes=3,
+                 class_names,
                  ann_file=None,
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
@@ -33,16 +34,11 @@ class LDPerceptionSegDataset(BaseSegDataset):
                  repeat=None,
                  exclude=None,
                  **kwargs) -> None:
-        if num_classes == 4:
-            LDPerceptionSegDataset.METAINFO = dict(
-                classes = ('background', 'grass', 'soil', 'animal'),
-                palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255], [0, 0, 255]]
-            )
-        else:
-            LDPerceptionSegDataset.METAINFO = dict(
-                classes = ('background', 'grass', 'soil'),
-                palette = [[128, 0, 128], [0, 255, 0], [0, 255, 255]]
-            )
+        assert isinstance(class_names, (tuple, list)), type(class_names)
+        LDPerceptionSegDataset.METAINFO = dict(
+            classes = class_names,
+            palette = PALETTE
+        )
         # include和exclude不能同时存在，如果非None，则必须为list
         assert include is None or exclude is None, "include和exclude不能同时存在"
         if include is not None:

@@ -1,5 +1,6 @@
 # ===== Global Constants =====
-NUM_CLASSES = 4
+CLASS_NAMES = ("background", "occlusion", "glare", "pure_background")
+NUM_CLASSES = len(CLASS_NAMES)
 RESIZE_WH = (320, 272)
 BATCH_PAD_HW = (272, 320)
 
@@ -137,7 +138,7 @@ train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/occlusion_only',
-        num_classes=NUM_CLASSES,
+        class_names=CLASS_NAMES,
         pipeline=train_pipeline,
         test_mode=False
     )
@@ -151,7 +152,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/occlusion_only',
-        num_classes=NUM_CLASSES,
+        class_names=CLASS_NAMES,
         pipeline=test_pipeline,
         test_mode=True
     )

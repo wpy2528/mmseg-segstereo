@@ -1,5 +1,6 @@
 # ===== Global Constants =====
-NUM_CLASSES = 4
+CLASS_NAMES = ("background", "grass", "soil", "animal")
+NUM_CLASSES = len(CLASS_NAMES)
 RESIZE_WH = (320, 272)
 BATCH_PAD_HW = (272, 320)
 
@@ -138,7 +139,7 @@ train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/grass_seg_data_c4',
-        num_classes=NUM_CLASSES,
+        class_names=CLASS_NAMES,
         pipeline=train_pipeline,
         repeat=REPEAT_FOLDERS,
         test_mode=False
@@ -153,7 +154,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root='/home/mck/datasets/grass_seg_data_c4',
-        num_classes=NUM_CLASSES,
+        class_names=CLASS_NAMES,
         pipeline=test_pipeline,
         include=TEST_FOLDERS,
         test_mode=True
