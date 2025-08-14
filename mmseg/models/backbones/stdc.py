@@ -7,6 +7,7 @@ from mmcv.cnn import ConvModule
 from mmengine.model import BaseModule, ModuleList, Sequential
 
 from mmseg.registry import MODELS
+from mmpretrain.registry import MODELS as MMPRETRAIN_MODELS
 from ..utils import resize
 from .bisenetv1 import AttentionRefinementModule
 
@@ -185,6 +186,7 @@ class FeatureFusionModule(BaseModule):
 
 
 @MODELS.register_module()
+@MMPRETRAIN_MODELS.register_module()
 class STDCNet(BaseModule):
     """This backbone is the implementation of `Rethinking BiSeNet For Real-time
     Semantic Segmentation <https://arxiv.org/abs/2104.13188>`_.
@@ -326,6 +328,7 @@ class STDCNet(BaseModule):
 
 
 @MODELS.register_module()
+@MMPRETRAIN_MODELS.register_module()
 class STDCContextPathNet(BaseModule):
     """STDCNet with Context Path. The `outs` below is a list of three feature
     maps from deep to shallow, whose height and width is from small to big,

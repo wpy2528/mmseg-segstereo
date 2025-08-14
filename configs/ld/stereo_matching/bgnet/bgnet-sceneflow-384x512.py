@@ -59,6 +59,31 @@ test_pipeline = [
     dict(type='PackStereoMatchingInputs')
 ]
 
+# 定义多个训练数据集
+train_datasets = [
+    dict(
+        type=dataset_type,
+        data_root='stereo_datasets/SceneFlow_driving',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+    dict(
+        type=dataset_type,
+        data_root='stereo_datasets/SceneFlow_flyingthings3d',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+    dict(
+        type=dataset_type,
+        data_root='stereo_datasets/SceneFlow_monkaa',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+]
+
 train_dataloader = dict(
     batch_size=16,
     num_workers=4,
@@ -66,11 +91,8 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     drop_last=True,
     dataset=dict(
-        type=dataset_type,
-        data_root='stereo_datasets/sceneflow/driving',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
+        type='ConcatDataset',
+        datasets=train_datasets
     )
 )
 
@@ -81,7 +103,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
-        data_root='stereo_datasets/sceneflow/driving',
+        data_root='stereo_datasets/SceneFlow_driving',
         num_classes=NUM_CLASSES,
         pipeline=test_pipeline,
         test_mode=True

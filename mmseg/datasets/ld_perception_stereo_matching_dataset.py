@@ -70,7 +70,7 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
     # 加载双目匹配数据集
     def load_data_list(self) -> List[dict]:
         data_list = []
-        lines = []
+        left_image_paths = []
         if self.ann_file is not None:
             if isinstance(self.ann_file, list):
                 ann_files = self.ann_file
@@ -81,25 +81,25 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
 
             for ann_file in ann_files:
                 with open(ann_file, 'r') as f:
-                    lines.extend([line.strip() for line in f.readlines()])
+                    left_image_paths.extend([line.strip() for line in f.readlines()])
         else:
             assert os.path.isdir(self.data_root), self.data_root
-            lines = glob.glob(os.path.join(self.data_root, "**", "left", "*.jpg"), recursive=True) + glob.glob(os.path.join(self.data_root, "**", "left", "*.png"), recursive=True)
+            left_image_paths = self.glob_all_left_image_paths(self.data_root)
 
         if self.include is not None:
-            lines = [line for line in lines if any(include in line for include in self.include)]
+            left_image_paths = [line for line in left_image_paths if any(include in line for include in self.include)]
         if self.exclude is not None:
-            lines = [line for line in lines if not any(exclude in line for exclude in self.exclude)]
+            left_image_paths = [line for line in left_image_paths if not any(exclude in line for exclude in self.exclude)]
         if self.repeat is not None:
             # 根据repeat的dict，对lines进行重复
             repeat_lines = []
-            for line in lines:
+            for line in left_image_paths:
                 for key, value in self.repeat.items():
                     if key in line:
                         repeat_lines.extend([line] * value)
                         break
 
-            lines += repeat_lines
+            left_image_paths += repeat_lines
 
         src_log_path = MMLogger.get_current_instance().log_file
         # 如果当前是调试模式，则不写入样本路径
@@ -111,14 +111,12 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
                 src_dataset_log_path = os.path.join(os.path.dirname(src_log_path), f"train_samples.txt")
                 print_log(f"训练集 样本路径写入到 {src_dataset_log_path} 中", logger="current")
             f = open(src_dataset_log_path, "w")
-            for line in lines:
+            for line in left_image_paths:
                 f.write(line + "\n")
             f.close()
             
-        for line in lines:
-            left_img_path = line
-            right_img_path = left_img_path.replace("/left/", "/right/")
-            left_disp_path = left_img_path.replace("/frames_cleanpass/", "/disparity/").replace(".png", ".pfm")
+        for line in left_image_paths:
+            left_img_path, right_img_path, left_disp_path = self.parse_right_and_disp_paths_by_left_path(line)
             data_info = dict(
                 left_img_path=left_img_path,
                 right_img_path=right_img_path,
@@ -137,3 +135,45 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
         assert len(data_list) > 0, "数据集为空"
         time.sleep(1)
         return data_list
+    
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        if "SceneFlow" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "left", "*.png"), recursive=True)
+        elif "crestereo" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "*_left.jpg"), recursive=True)
+        elif "falling_things" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "*.left.jpg"), recursive=True)
+        elif "generate_isaac" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "Replicator", "**", "rgb_*.png"), recursive=True)
+        else:
+            raise ValueError(f"不支持的数据集: {data_root}")
+        return left_img_paths
+    
+    def parse_right_and_disp_paths_by_left_path(self, left_img_path: str) -> tuple:
+        if "SceneFlow" in left_img_path:
+            right_img_path = left_img_path.replace("/left/", "/right/")
+            left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
+        elif "crestereo" in left_img_path:
+            right_img_path = left_img_path.replace("_left.jpg", "_right.jpg")
+            left_disp_path = left_img_path.replace("_left.jpg", "_left_disp.png")
+        elif "falling_things" in left_img_path:
+            right_img_path = left_img_path.replace(".left.jpg", ".right.jpg")
+            left_disp_path = left_img_path.replace(".left.jpg", ".left.depth.png")
+        elif "generate_isaac" in left_img_path:
+            right_img_path = left_img_path.replace("Replicator", "Replicator_01")
+            depth_path = left_img_path.replace("/rgb/", "/distance_to_image_plane/").replace(".png", ".npy")
+            assert 0, "待计算视差"
+        else:
+            raise ValueError(f"不支持的数据集: {left_img_path}")
+        return left_img_path, right_img_path, left_disp_path
+
+
+if __name__ == "__main__":
+    dataset = LDPerceptionStereoMatchingDataset(
+        data_root="stereo_datasets/SceneFlow_driving",
+        ann_file="stereo_datasets/SceneFlow_driving/train.txt",
+        num_classes=3,
+        test_mode=True
+    )
+    data_list = dataset.load_data_list()
+    print(data_list)

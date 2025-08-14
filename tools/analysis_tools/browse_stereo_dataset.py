@@ -6,6 +6,7 @@ import os
 import argparse
 import os.path as osp
 import random
+from mmengine.dataset import ConcatDataset
 from mmengine.config import Config, DictAction
 from mmengine.utils import ProgressBar
 
@@ -68,8 +69,8 @@ def main():
     if not args.not_random:
         random.shuffle(indexes)
     
-    dataset.data_root = dataset.data_root.rstrip("/")
-    assert isinstance(dataset, LDPerceptionStereoMatchingDataset), "必须是双目数据集"
+    # dataset.data_root = dataset.data_root.rstrip("/")
+    assert isinstance(dataset, (LDPerceptionStereoMatchingDataset, ConcatDataset)), "必须是双目数据集"
     for index in indexes:
         item = dataset[index]
         img = item['inputs'].permute(1, 2, 0).numpy()

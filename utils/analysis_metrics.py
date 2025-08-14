@@ -177,16 +177,76 @@ def save_analysis_report(analysis, output_dir='cursor_utils'):
     
     print(f"分析报告已保存到: {report_path}")
 
+def sort_samples_by_class_iou(metrics_data, output_dir='cursor_utils'):
+    """
+    按照每个类别的IoU对样本进行排序
+    
+    Args:
+        metrics_data (list): 指标数据列表
+        output_dir (str): 输出目录
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 按类别收集样本和IoU值
+    class_samples = defaultdict(list)
+    
+    for item in metrics_data:
+        if item['IoU'] is not None:
+            for class_idx, iou_val in enumerate(item['IoU']):
+                if iou_val is not None:
+                    class_samples[class_idx].append({
+                        'img_path': item['img_path'],
+                        'iou': iou_val,
+                        'aacc': item['aAcc'] if item['aAcc'] is not None else 0.0
+                    })
+    
+    print(f"发现 {len(class_samples)} 个类别")
+    
+    # 为每个类别升序并保存结果
+    for class_idx, samples in class_samples.items():
+        # 按IoU降序排序
+        sorted_samples = sorted(samples, key=lambda x: x['iou'], reverse=False)
+        
+        # 保存排序结果 - 简化格式
+        output_path = os.path.join(output_dir, f'class_{class_idx}_sorted_by_iou.txt')
+        with open(output_path, 'w', encoding='utf-8') as f:
+            for sample in sorted_samples:
+                f.write(f"{sample['img_path']} {sample['iou']:.6f}\n")
+        
+        print(f"类别 {class_idx}: 已保存 {len(sorted_samples)} 个样本的排序结果到 {output_path}")
+        
+        # # 保存前10名和后10名 - 简化格式
+        # top_10_path = os.path.join(output_dir, f'class_{class_idx}_top_10.txt')
+        # bottom_10_path = os.path.join(output_dir, f'class_{class_idx}_bottom_10.txt')
+        
+        # with open(top_10_path, 'w', encoding='utf-8') as f:
+        #     for sample in sorted_samples[:10]:
+        #         f.write(f"{sample['img_path']} {sample['iou']:.6f}\n")
+        
+        # with open(bottom_10_path, 'w', encoding='utf-8') as f:
+        #     for sample in sorted_samples[-10:]:
+        #         f.write(f"{sample['img_path']} {sample['iou']:.6f}\n")
+        
+        # print(f"  前10名已保存到: {top_10_path}")
+        # print(f"  后10名已保存到: {bottom_10_path}")
+
 def main():
     parser = argparse.ArgumentParser(description='分析per_sample_metrics.json文件')
     parser.add_argument('json_path', help='per_sample_metrics.json文件路径')
     parser.add_argument('--output_dir', default='cursor_utils', help='输出目录')
+    parser.add_argument('--sort_by_iou', action='store_true', help='按类别IoU排序样本')
     
     args = parser.parse_args()
     
     # 读取数据
     print(f"正在读取文件: {args.json_path}")
     metrics_data = read_metrics_json(args.json_path)
+
+    # 如果指定了排序功能，执行排序
+    if args.sort_by_iou:
+        print("正在按类别IoU排序样本...")
+        sort_samples_by_class_iou(metrics_data, args.output_dir)
+        return
 
     # 分析IoU值小于0.95的样本
     print("正在分析IoU值小于0.95的样本...")

@@ -174,7 +174,16 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
             dict: The dict contains loaded semantic segmentation annotations.
         """
 
-        left_disp_np = pfm_imread(results['left_disp_path'])
+        if results['left_disp_path'].endswith('.pfm'):
+            left_disp_np = pfm_imread(results['left_disp_path'])
+        elif results['left_disp_path'].endswith('.png'):
+            left_disp_np = cv2.imread(results['left_disp_path'], cv2.IMREAD_GRAYSCALE)
+        elif results['left_disp_path'].endswith('.npy'):
+            left_disp_np = np.load(results['left_disp_path'])
+        else:
+            raise ValueError(f"不支持的深度图格式: {results['left_disp_path']}")
+        left_disp_np = np.abs(left_disp_np) # ! stereo_datasets/SceneFlow_flyingthings3d 数据集的数值是负的
+        assert "right" not in results['left_disp_path'], "left_disp_path 不能包含 right"
         results['left_disp'] = left_disp_np
         results['seg_fields'].append('left_disp')
 

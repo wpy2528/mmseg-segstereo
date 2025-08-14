@@ -33,5 +33,17 @@
         "transfer_occu": "occu"
     },
     "allow_nonexisted_category": true
+},
+"occlusion_only": {
+    "category_fill_priority": ["background", "occu"],
+    "category_map": {
+        "background": 0,
+        "occu": 1
+    },
+    "ignored_categories": [],
+    "same_category_map": {
+        "transfer_occu": "occu"
+    },
+    "allow_nonexisted_category": true
 }
 }
