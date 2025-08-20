@@ -52,7 +52,7 @@ docker exec $container_id mkdir -p /workspace/board-demo-T527/docker_images_v1.8
 # 把onnx文件拷贝到docker中
 docker cp $src_onnx_path $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation/model_grass_segmentation.onnx
 
-# 进入docker执行模型转换
+# 进入docker执行模型转换，生成预处理和后处理yml文件
 docker exec -i $container_id bash <<'EOF'
 cd /workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation
 
@@ -68,16 +68,18 @@ alias nbinfo='/root/nbinfo'
 ACUITY_PATH=/root/acuity-toolkit-binary-6.21.14/bin VIV_SDK=/root/Vivante_IDE/VivanteIDE5.8.2/cmdtools ./pegasus_import.sh model_grass_segmentation/
 EOF
 
+# 把生成的预处理yml文件从docker中拷贝出来，将其默认的均值和方差修改为我们指定的值，然后再拷贝回docker中
 docker cp $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation/model_grass_segmentation_inputmeta.yml .
 python utils/modify_inputmeta_inplace.py model_grass_segmentation_inputmeta.yml $mean $std
 docker cp model_grass_segmentation_inputmeta.yml $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation/
 
+# 进入docker执行模型量化，生成nb文件
 docker exec -i $container_id bash <<'EOF'
 cd /workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation
 ACUITY_PATH=/root/acuity-toolkit-binary-6.21.14/bin VIV_SDK=/root/Vivante_IDE/VivanteIDE5.8.2/cmdtools ./quan_infer_export_pipeline.sh model_grass_segmentation/
 EOF
 
-# 把nb文件拷贝到src_onnx_path的目录下
+# 把生成的nb文件拷贝到src_onnx_path的目录下
 dst_dir=$(dirname $src_onnx_path)
 dst_nb_path=${dst_dir}/model_grass_recognize.nb
 docker cp $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation/wksp/model_grass_segmentation_uint8_nbg_unify/model_grass_segmentation_uint8_x527.nb $dst_nb_path
