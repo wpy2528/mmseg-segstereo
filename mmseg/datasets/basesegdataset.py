@@ -227,14 +227,17 @@ class BaseSegDataset(BaseDataset):
             new_palette = np.random.randint(
                 0, 255, size=(len(classes), 3)).tolist()
             np.random.set_state(state)
-        elif len(palette) >= len(classes) and self.label_map is not None:
-            new_palette = []
-            # return subset of palette
-            for old_id, new_id in sorted(
-                    self.label_map.items(), key=lambda x: x[1]):
-                if new_id != 255:
-                    new_palette.append(palette[old_id])
-            new_palette = type(palette)(new_palette)
+        elif len(palette) > len(classes):
+            if self.label_map is not None:
+                new_palette = []
+                # return subset of palette
+                for old_id, new_id in sorted(
+                        self.label_map.items(), key=lambda x: x[1]):
+                    if new_id != 255:
+                        new_palette.append(palette[old_id])
+                new_palette = type(palette)(new_palette)
+            else:
+                new_palette = palette[:len(classes)]
         else:
             raise ValueError('palette does not match classes '
                              f'as metainfo is {self._metainfo}.')
