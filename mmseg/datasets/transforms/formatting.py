@@ -160,7 +160,16 @@ class PackStereoMatchingInputs(BaseTransform):
         """
         packed_results = dict()
         assert 'img' not in results, "截至执行打包之前 img 不能在results里"
-        results['img'] = np.concatenate([results['left_img'][..., np.newaxis], results['right_img'][..., np.newaxis]], axis=2)
+        left_img = results['left_img']
+        right_img = results['right_img']
+        if len(left_img.shape) == 3:
+            results['img'] = np.concatenate([left_img, right_img], axis=2)
+        elif len(left_img.shape) == 2:
+            results['img'] = np.concatenate([left_img[..., np.newaxis], right_img[..., np.newaxis]], axis=2)
+        else:
+            raise ValueError(f'left_img 和 right_img 的形状不合法: {left_img.shape} 和 {right_img.shape}')
+        del results['left_img']
+        del results['right_img']
 
         if 'img' in results:
             img = results['img']

@@ -1,14 +1,14 @@
 # ===== Global Constants =====
 NUM_CLASSES = 4
-CROP_HW = (384, 512)
-BATCH_PAD_HW = (384, 512)
+CROP_HW = (320, 768)
+BATCH_PAD_HW = (320, 768)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
 data_preprocessor = dict(
     type='SegDataPreProcessor',
-    mean=[0.0, 0.0], # 输入的时候把grayscale的左目和右目沿着通道轴拼接，所以mean和std都是两个
-    std=[255.0, 255.0],
+    mean=[0.0, 0.0, 0.0] * 2, # 输入的时候把grayscale的左目和右目沿着通道轴拼接，所以mean和std都是三个
+    std=[255.0, 255.0, 255.0] * 2,
     size=BATCH_PAD_HW,
     bgr_to_rgb=False, # 不能交换通道（不能交换左右目）
     pad_val=0,
@@ -20,7 +20,7 @@ model = dict(
     type='DepthEstimator',
     data_preprocessor=data_preprocessor,
     backbone=dict(
-        type='BGNet_Plus'),
+        type='IGEVStereo'),
     decode_head=dict(
         type='StereoMatchingHead',
         in_channels=512,
@@ -40,21 +40,14 @@ model = dict(
 dataset_type = 'LDPerceptionStereoMatchingDataset'
 
 train_pipeline = [
-    dict(type='LoadStereoImages', color_type='grayscale'),
+    dict(type='LoadStereoImages', color_type='color'),
     dict(type='LoadStereoMatchingAnnotations'),
-    # dict(type='RandomCrop', crop_size=CROP_HW),
-    dict(type='CREStereoAugmentor', image_hw=CROP_HW),
-    # dict(
-    #     type='Resize',
-    #     scale=RESIZE_WH,
-    #     keep_ratio=False
-    # ),
-    # dict(type='RandomFlip', prob=0.5),
+    dict(type='FlowAugmentor'),
     dict(type='PackStereoMatchingInputs')
 ]
 
 test_pipeline = [
-    dict(type='LoadStereoImages', color_type='grayscale'),
+    dict(type='LoadStereoImages', color_type='color'),
     dict(type='LoadStereoMatchingAnnotations'),
     dict(type='PackStereoMatchingInputs')
 ]
@@ -63,21 +56,21 @@ test_pipeline = [
 train_datasets = [
     dict(
         type=dataset_type,
-        data_root='stereo_datasets/SceneFlow_driving',
+        data_root='sceneflow/SceneFlow_driving',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
     dict(
         type=dataset_type,
-        data_root='stereo_datasets/SceneFlow_flyingthings3d',
+        data_root='sceneflow/SceneFlow_flyingthings3d',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
     dict(
         type=dataset_type,
-        data_root='stereo_datasets/SceneFlow_monkaa',
+        data_root='sceneflow/SceneFlow_monkaa',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
@@ -85,7 +78,7 @@ train_datasets = [
 ]
 
 train_dataloader = dict(
-    batch_size=16,
+    batch_size=8,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -97,7 +90,7 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    batch_size=16,
+    batch_size=8,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -117,16 +110,19 @@ val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'], output_dir='pgs', c
 test_evaluator = val_evaluator
 
 # ===== Optimization & Scheduler =====
-optimizer = dict(type='AdamW', lr=0.0005, weight_decay=0.01)
+optimizer = dict(type='AdamW', lr=0.0002, weight_decay=1e-5)
 optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
 
 param_scheduler = [
     dict(
+        type='LinearLR', start_factor=3e-1, begin=0, end=2,
+        by_epoch=True),
+    dict(
         type='PolyLR',
-        eta_min=1e-4,
+        eta_min=1e-5,
         power=0.9,
         by_epoch=True,
-        begin=0,
+        begin=2,
         end=50
     )
 ]

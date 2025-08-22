@@ -159,7 +159,10 @@ def main():
         with open(args.img, "r") as f:
             left_image_paths = [line.strip().split()[0] for line in f.readlines()]
     elif os.path.isdir(args.img):
-        left_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
+        if "x5_stereo" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "left*.png"), recursive=True)
+        else:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
         # 排除包含/labels/的图片
         left_image_paths = [path for path in left_image_paths if "/labels/" not in path]
             

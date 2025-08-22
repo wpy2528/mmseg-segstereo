@@ -25,8 +25,8 @@ from utils.visualize_disp import pfm_imread
 @TRANSFORMS.register_module()
 class LoadStereoImages(BaseTransform):
     def __init__(self,
+                 color_type: str,
                  to_float32: bool = False,
-                 color_type: str = 'color',
                  imdecode_backend: str = 'cv2',
                  file_client_args: Optional[dict] = None,
                  ignore_empty: bool = False,
@@ -65,10 +65,16 @@ class LoadStereoImages(BaseTransform):
 
         left_img_path = results['left_img_path']
         right_img_path = results['right_img_path']
-        # 加载左图
-        src_left_img_np = cv2.imread(left_img_path, cv2.IMREAD_GRAYSCALE)
-        # 加载右图
-        src_right_img_np = cv2.imread(right_img_path, cv2.IMREAD_GRAYSCALE)
+        if self.color_type == 'color':
+            # 加载左图
+            src_left_img_np = cv2.imread(left_img_path, cv2.IMREAD_COLOR)
+            # 加载右图
+            src_right_img_np = cv2.imread(right_img_path, cv2.IMREAD_COLOR)
+        elif self.color_type == 'grayscale':
+            # 加载左图
+            src_left_img_np = cv2.imread(left_img_path, cv2.IMREAD_GRAYSCALE)
+            # 加载右图
+            src_right_img_np = cv2.imread(right_img_path, cv2.IMREAD_GRAYSCALE)
 
         if self.to_float32:
             src_left_img_np = src_left_img_np.astype(np.float32)

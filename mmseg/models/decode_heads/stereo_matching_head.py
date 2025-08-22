@@ -2,6 +2,7 @@ from typing import List
 from mmseg.registry import MODELS
 from .decode_head import BaseDecodeHead
 
+import os
 import torch
 import torch.nn as nn
 from torch import Tensor
@@ -42,7 +43,7 @@ class StereoMatchingHead(BaseDecodeHead):
         #     mode='bilinear',
         #     align_corners=self.align_corners)
         if self.sampler is not None:
-            seg_weight = self.sampler.sample(seg_logits, seg_label)
+            seg_weight = self.sampler.sample(seg_logits, seg_label) # TODO 筛最大视差
         else:
             seg_weight = None
         # ! 由于要计算L1损失，所以需要保持[B 1 H W]的形状
@@ -65,6 +66,18 @@ class StereoMatchingHead(BaseDecodeHead):
                     seg_label,
                     weight=seg_weight,
                     ignore_index=self.ignore_index)
+                
+            # 检查loss是不是nan
+            loss_value = loss[loss_decode.loss_name]
+            if torch.isnan(loss_value).any():
+                save_dir = "cursor_utils/debug_stereo_matching"
+                os.makedirs(save_dir, exist_ok=True)
+                seg_logits_path = os.path.join(save_dir, "seg_logits.pt")
+                seg_label_path = os.path.join(save_dir, "seg_label.pt")
+                torch.save(seg_logits, seg_logits_path)
+                torch.save(seg_label, seg_label_path)
+                raise ValueError(f"Loss '{loss_decode.loss_name}' 出现了NaN，请检查输入和网络输出。")
+            
         if len(seg_label.shape) == 3:
             loss['acc_seg'] = accuracy(
                 seg_logits, seg_label, ignore_index=self.ignore_index)

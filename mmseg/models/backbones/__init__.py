@@ -28,6 +28,7 @@ from .vpd import VPD
 from .yolov5ds_backbone import Yolov5DSBackbone
 
 from .bgnet import BGNet_Plus
+from .igevpp_rt import IGEVStereo
 
 __all__ = [
     'ResNet', 'ResNetV1c', 'ResNetV1d', 'ResNeXt', 'HRNet', 'FastSCNN',
@@ -38,5 +39,6 @@ __all__ = [
     'DDRNet', 'VPD', 
     
     'Yolov5DSBackbone',
-    'BGNet_Plus'
+    'BGNet_Plus',
+    'IGEVStereo'
 ]

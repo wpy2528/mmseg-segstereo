@@ -104,12 +104,17 @@ def main():
             left_disp_np = data_sample.left_disp.data.astype(np.uint8)[0]
 
             # 将src_image_np的最后一个轴拆分为left_image_np和right_image_np
-            left_image_np = src_image_np[..., 0]
-            right_image_np = src_image_np[..., 1]
-
-            # 将单通道灰度图转为3通道以便可视化
-            left_image_np_vis = cv2.cvtColor(left_image_np, cv2.COLOR_GRAY2BGR)
-            right_image_np_vis = cv2.cvtColor(right_image_np, cv2.COLOR_GRAY2BGR)
+            if src_image_np.shape[2] == 2:
+                left_image_np = src_image_np[..., 0]
+                right_image_np = src_image_np[..., 1]
+                # 将单通道灰度图转为3通道以便可视化
+                left_image_np_vis = cv2.cvtColor(left_image_np, cv2.COLOR_GRAY2BGR)
+                right_image_np_vis = cv2.cvtColor(right_image_np, cv2.COLOR_GRAY2BGR)
+            else:
+                left_image_np = src_image_np[..., :3]
+                right_image_np = src_image_np[..., 3:]
+                left_image_np_vis = left_image_np
+                right_image_np_vis = right_image_np
 
             # 用jet色图可视化gt_np
             gt_norm = cv2.normalize(left_disp_np.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
