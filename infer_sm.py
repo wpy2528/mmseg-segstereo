@@ -25,6 +25,8 @@ def get_color_mask(mask):
 
 def infer_image(model, left_image_path, args):
     right_image_path = left_image_path.replace("left", "right")
+    print(left_image_path)
+    print(right_image_path)
     left_image_np = cv2.imread(left_image_path)
     right_image_np = cv2.imread(right_image_path)
     result = dict(left_img_path=left_image_path, right_img_path=right_image_path)

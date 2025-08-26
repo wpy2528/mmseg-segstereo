@@ -27,6 +27,7 @@ from .imgaug_for_mm.random_masking import RandomMasking
 
 from .stereo_aug.cre_stereo_augmentor import CREStereoAugmentor
 from .stereo_aug.igevpp_stereo_augmentor import FlowAugmentor, SparseFlowAugmentor
+from .stereo_aug.resize_stereo_images import ResizeStereoImages
 # yapf: enable
 __all__ = [
     'LoadAnnotations', 'RandomCrop', 'BioMedical3DRandomCrop', 'SegRescale',
@@ -40,5 +41,5 @@ __all__ = [
     'LoadMultipleRSImageFromFile', 'LoadDepthAnnotation', 'RandomDepthMix',
     'RandomFlip', 'Resize', 
     'ResizeToFrontOrSideImageOriginalSize', 'CopyPasteTop', 'ISPStyleAug', 'ConcatFrontAndSide', 'CropTop', 'ImageQualityAug', 'DilateSoilMask', 'RandomMasking', 'LoadStereoImages', 'LoadStereoMatchingAnnotations',
-    'CREStereoAugmentor', 'FlowAugmentor', 'SparseFlowAugmentor'
+    'CREStereoAugmentor', 'FlowAugmentor', 'SparseFlowAugmentor', 'ResizeStereoImages'
 ]

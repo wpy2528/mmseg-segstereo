@@ -187,6 +187,8 @@ class IGEVStereo(nn.Module):
     def forward(self, inputs, iters=0, flow_init=None, test_mode=False):
         """ Estimate disparity between pair of frames """
         image1, image2 = inputs.split(3, dim=1)
+        assert image1.shape[2] % 32 == 0
+        assert image1.shape[3] % 32 == 0
 
         with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
             features_left = self.feature(image1)

@@ -1,6 +1,6 @@
 # ===== Global Constants =====
 NUM_CLASSES = 4
-CROP_HW = (320, 768)
+TEST_RESIZE_WH = (960, 544)
 BATCH_PAD_HW = (320, 768)
 
 norm_cfg = dict(type='BN', requires_grad=True)
@@ -49,6 +49,7 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadStereoImages', color_type='color'),
     dict(type='LoadStereoMatchingAnnotations'),
+    dict(type='ResizeStereoImages', scale=TEST_RESIZE_WH),
     dict(type='PackStereoMatchingInputs')
 ]
 

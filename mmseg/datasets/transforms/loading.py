@@ -19,7 +19,7 @@ try:
 except ImportError:
     gdal = None
 
-from utils.visualize_disp import pfm_imread
+from utils.stereo_matching.visualize_disp import pfm_imread
 
 
 @TRANSFORMS.register_module()

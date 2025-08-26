@@ -377,12 +377,13 @@ class DepthEstimator(EncoderDecoder):
                         i_depth = i_depth.flip(dims=(2, ))
 
                 # resize as original shape
+                w_scale = img_meta['scale_factor'][0]
                 i_depth = resize(
                     i_depth,
                     size=img_meta['ori_shape'],
                     mode='bilinear',
                     align_corners=self.align_corners,
-                    warning=False).squeeze(0) # fixme 乘以横向resize倍数
+                    warning=False).squeeze(0) / w_scale # 视差放缩
             else:
                 i_depth = depth[i]
 
