@@ -7,7 +7,7 @@ import random
 
 @TRANSFORMS.register_module()
 class CopyPasteTop(BaseTransform):
-    """从图池中随机选图，将其C区域粘贴到当前图A区域。
+    """从图池中随机选图，将其下半部分粘贴到当前图上半部分。
     
     图池始终保持固定大小，每次替换池中旧图以保证多样性。
     """
@@ -43,19 +43,20 @@ class CopyPasteTop(BaseTransform):
             paste_img = paste_entry['img']
             paste_seg = paste_entry.get('gt_seg_map')
 
-            # C 区域（顶部1/2）
+            # 裁出其底部1/2
             paste_half = paste_img.shape[0] // 2
-            paste_c = paste_img[0:paste_half].copy()
+            paste_c = paste_img[paste_half:].copy()
 
             assert paste_c.shape[0] == half
             if paste_c.shape[0] != half:
                 paste_c = np.resize(paste_c, (half, w, img.shape[2]))
+            # 贴到原图的顶部1/2
             img[0:half] = paste_c
             results['img'] = img
 
             if 'gt_seg_map' in results and paste_seg is not None:
                 seg = results['gt_seg_map']
-                c_seg = paste_seg[0:paste_half].copy()
+                c_seg = paste_seg[paste_half:].copy()
                 if c_seg.shape[0] != half:
                     c_seg = np.resize(c_seg, (half, seg.shape[1]))
                 seg[0:half] = c_seg
