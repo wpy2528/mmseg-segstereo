@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from .op_replace_for_x5 import replace_deconv3d_to_deconv2d_with_deconv1d
 
 
 
@@ -10,12 +11,17 @@ class BasicConv(nn.Module):
 
     def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, bn=True, relu=True, **kwargs):
         super(BasicConv, self).__init__()
+        block_index = kwargs.pop('block_index', None)
+        self.deconv = deconv
+        self.is_3d = is_3d
 
         self.relu = relu
         self.use_bn = bn
         if is_3d:
             if deconv:
-                self.conv = nn.ConvTranspose3d(in_channels, out_channels, bias=False, **kwargs)
+                self.conv = replace_deconv3d_to_deconv2d_with_deconv1d(
+                    in_channels, out_channels, bias=False, block_index=block_index, **kwargs)
+                # self._conv = nn.ConvTranspose3d(in_channels, out_channels, bias=False, **kwargs)
             else:
                 self.conv = nn.Conv3d(in_channels, out_channels, bias=False, **kwargs)
             self.bn = nn.BatchNorm3d(out_channels)
@@ -26,8 +32,11 @@ class BasicConv(nn.Module):
                 self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
             self.bn = nn.BatchNorm2d(out_channels)
 
-    def forward(self, x):
-        x = self.conv(x)
+    def forward(self, input):
+        x = self.conv(input)
+        # if self.deconv and self.is_3d:
+        #     x_ = self._conv(input)
+        #     assert x.shape == x_.shape, f"x.shape: {x.shape}, x_.shape: {x_.shape}"
         if self.use_bn:
             x = self.bn(x)
         if self.relu:
@@ -86,6 +95,7 @@ class BasicConv_IN(nn.Module):
         self.use_in = IN
         if is_3d:
             if deconv:
+                raise NotImplementedError
                 self.conv = nn.ConvTranspose3d(in_channels, out_channels, bias=False, **kwargs)
             else:
                 self.conv = nn.Conv3d(in_channels, out_channels, bias=False, **kwargs)
@@ -159,7 +169,7 @@ def groupwise_correlation(fea1, fea2, num_groups):
 def build_gwc_volume(refimg_fea, targetimg_fea, maxdisp, num_groups):
     B, C, H, W = refimg_fea.shape
     volume = refimg_fea.new_zeros([B, num_groups, maxdisp, H, W])
-    for i in range(maxdisp):
+    for i in range(maxdisp): # 这个地方形成了onnx中那一大长串
         if i > 0:
             volume[:, :, i, :, i:] = groupwise_correlation(refimg_fea[:, :, :, i:], targetimg_fea[:, :, :, :-i],
                                                            num_groups)

@@ -40,13 +40,13 @@ class hourglass(nn.Module):
 
 
         self.conv3_up = BasicConv(in_channels*6, in_channels*4, deconv=True, is_3d=True, bn=True,
-                                  relu=True, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2))
+                                  relu=True, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2), block_index=3)
 
         self.conv2_up = BasicConv(in_channels*4, in_channels*2, deconv=True, is_3d=True, bn=True,
-                                  relu=True, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2))
+                                  relu=True, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2), block_index=2)
 
         self.conv1_up = BasicConv(in_channels*2, 8, deconv=True, is_3d=True, bn=False,
-                                  relu=False, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2))
+                                  relu=False, kernel_size=(4, 4, 4), padding=(1, 1, 1), stride=(2, 2, 2), block_index=1)
 
         self.agg_0 = nn.Sequential(BasicConv(in_channels*8, in_channels*4, is_3d=True, kernel_size=1, padding=0, stride=1),
                                    BasicConv(in_channels*4, in_channels*4, is_3d=True, kernel_size=3, padding=1, stride=1),
@@ -175,7 +175,7 @@ class IGEVStereo(nn.Module):
                 m.eval()
 
     def upsample_disp(self, disp, mask_feat_4, stem_2x):
-
+        raise NotImplementedError
         with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
             xspx = self.spx_2_gru(mask_feat_4, stem_2x) # 这里和gru没鸟关系
             spx_pred = self.spx_gru(xspx) # 放大一倍
@@ -183,10 +183,14 @@ class IGEVStereo(nn.Module):
             up_disp = context_upsample(disp*4., spx_pred)
         return up_disp
 
-
-    def forward(self, inputs, iters=0, flow_init=None, test_mode=False):
-        """ Estimate disparity between pair of frames """
+    
+    def forward(self, inputs):
         image1, image2 = inputs.split(3, dim=1)
+        return self.forward_inner((image1, image2))
+
+    def forward_inner(self, inputs, iters=0, flow_init=None, test_mode=False):
+        """ Estimate disparity between pair of frames """
+        image1, image2 = inputs
         assert image1.shape[2] % 32 == 0
         assert image1.shape[3] % 32 == 0
 
