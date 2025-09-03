@@ -39,8 +39,6 @@ class LDPerceptionSegDataset(BaseSegDataset):
             classes = class_names,
             palette = PALETTE
         )
-        # include和exclude不能同时存在，如果非None，则必须为list
-        assert include is None or exclude is None, "include和exclude不能同时存在"
         if include is not None:
             assert isinstance(include, list), "include必须为list"
             include = ['/' + e.rstrip('/').lstrip('/') + '/' if (not e.endswith('.txt')) else e for e in include]
