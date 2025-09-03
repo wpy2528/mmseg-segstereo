@@ -178,7 +178,22 @@ def build_gwc_volume(refimg_fea, targetimg_fea, maxdisp, num_groups):
     volume = volume.contiguous()
     return volume
         
-
+def build_gwc_volume_no_scatternd(refimg_fea, targetimg_fea, maxdisp, num_groups):
+    B, C, H, W = refimg_fea.shape
+    volume_list = []
+    for i in range(maxdisp):
+        if i > 0:
+            corr = groupwise_correlation(refimg_fea[:, :, :, i:], targetimg_fea[:, :, :, :-i], num_groups)
+            corr = corr.unsqueeze(2)
+            blank_side = refimg_fea.new_zeros([B, num_groups, 1, H, i])
+            corr = torch.cat([blank_side, corr], dim=4)
+            volume_list.append(corr)
+        else:
+            corr = groupwise_correlation(refimg_fea, targetimg_fea, num_groups)
+            corr = corr.unsqueeze(2)
+            volume_list.append(corr)
+    volume = torch.cat(volume_list, dim=2)
+    return volume
 
 
 def norm_correlation(fea1, fea2):

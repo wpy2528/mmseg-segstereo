@@ -13,6 +13,7 @@ from mmseg.apis import init_model
 
 def export_onnx(config, checkpoint, device, input_hw=(320, 320)):
     model = init_model(config, checkpoint, device=device)
+    model.eval()
     assert device == 'cpu', "only cpu is supported"
     if device == 'cpu':
         model = revert_sync_batchnorm(model)
@@ -25,7 +26,7 @@ def export_onnx(config, checkpoint, device, input_hw=(320, 320)):
     dummy_right = torch.zeros(1, 3, input_hw[0], input_hw[1]).float()
     model.backbone.forward = model.backbone.forward_inner
     torch.onnx.export(
-        model, ((dummy_left, dummy_right), None, "export_for_nb"), dst_onnx_path, input_names=["left", "right"], output_names=["output"],
+        model, ((dummy_left, dummy_right), None, "export_stereo_matching"), dst_onnx_path, input_names=["left", "right"], output_names=["output"],
         dynamic_axes=None,
         opset_version=11
     )

@@ -122,6 +122,30 @@ class BaseSegmentor(BaseModel, metaclass=ABCMeta):
                     ] * inputs.shape[0]
             seg_logits = self.inference(inputs, batch_img_metas)
             return seg_logits.permute(0, 2, 3, 1) # 将类别轴放到最后方便推理时缓存命中
+        elif mode == 'export_stereo_matching':
+            if data_samples is not None:
+                batch_img_metas = [
+                    data_sample.metainfo for data_sample in data_samples
+                ]
+            else:
+                if isinstance(inputs, tuple):
+                    batch_img_metas = [
+                        dict(
+                            ori_shape=inputs[0].shape[2:],
+                            img_shape=inputs[0].shape[2:],
+                            pad_shape=inputs[0].shape[2:],
+                            padding_size=[0, 0, 0, 0])
+                    ] * inputs[0].shape[0]
+                else:
+                    batch_img_metas = [
+                        dict(
+                            ori_shape=inputs.shape[2:],
+                            img_shape=inputs.shape[2:],
+                            pad_shape=inputs.shape[2:],
+                            padding_size=[0, 0, 0, 0])
+                    ] * inputs.shape[0]
+            seg_logits = self.inference(inputs, batch_img_metas)
+            return seg_logits
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')

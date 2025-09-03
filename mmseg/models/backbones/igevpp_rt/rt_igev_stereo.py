@@ -5,7 +5,7 @@ from .update import BasicUpdateBlock
 from .extractor import Feature
 from .geometry import Geo_Encoding_Volume
 from .submodule import *
-
+from .submodule import build_gwc_volume_no_scatternd
 from mmseg.registry import MODELS
 
 try:
@@ -206,7 +206,8 @@ class IGEVStereo(nn.Module):
 
             match_left = self.desc(self.conv(features_left[0]))
             match_right = self.desc(self.conv(features_right[0]))
-            gwc_volume = build_gwc_volume(match_left, match_right, self.args.max_disp//4, 8)
+            # gwc_volume = build_gwc_volume(match_left, match_right, self.args.max_disp//4, 8)
+            gwc_volume = build_gwc_volume_no_scatternd(match_left, match_right, self.args.max_disp//4, 8)
             geo_encoding_volume = self.cost_agg(gwc_volume, features_left)
 
             # Init disp from geometry encoding volume
