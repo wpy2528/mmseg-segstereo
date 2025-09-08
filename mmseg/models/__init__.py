@@ -10,7 +10,12 @@ from .necks import *  # noqa: F401,F403
 from .segmentors import *  # noqa: F401,F403
 from .text_encoder import *  # noqa: F401,F403
 
+from hat.models.backbones.mixvargenet import MixVarGENet
+from hat.models.structures.stereo_match.dstereoplus import DStereoPlus
+
 __all__ = [
     'BACKBONES', 'HEADS', 'LOSSES', 'SEGMENTORS', 'build_backbone',
     'build_head', 'build_loss', 'build_segmentor', 'SegDataPreProcessor'
+    'MixVarGENet',
+    'DStereoPlus',
 ]

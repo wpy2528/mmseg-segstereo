@@ -12,11 +12,13 @@ from .silog_loss import SiLogLoss
 from .tversky_loss import TverskyLoss
 from .utils import reduce_loss, weight_reduce_loss, weighted_loss
 from .l1_loss import L1Loss, l1_loss
+from .stereo_sequence_loss import StereoSequenceLoss, StereoSequenceLossWithValidMask, stereo_sequence_loss
 
 __all__ = [
     'accuracy', 'Accuracy', 'cross_entropy', 'binary_cross_entropy',
     'mask_cross_entropy', 'CrossEntropyLoss', 'reduce_loss',
     'weight_reduce_loss', 'weighted_loss', 'LovaszLoss', 'DiceLoss',
     'FocalLoss', 'TverskyLoss', 'OhemCrossEntropy', 'BoundaryLoss',
-    'HuasdorffDisstanceLoss', 'SiLogLoss', 'L1Loss', 'l1_loss'
+    'HuasdorffDisstanceLoss', 'SiLogLoss', 'L1Loss', 'l1_loss',
+    'StereoSequenceLoss', 'StereoSequenceLossWithValidMask', 'stereo_sequence_loss'
 ]
