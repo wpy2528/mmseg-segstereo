@@ -101,7 +101,7 @@ def main():
             
         else:
             src_image_np = img
-            left_disp_np = data_sample.left_disp.data.astype(np.uint8)[0]
+            left_disp_np = data_sample.left_disp.data[0]
 
             # 将src_image_np的最后一个轴拆分为left_image_np和right_image_np
             if src_image_np.shape[2] == 2:
