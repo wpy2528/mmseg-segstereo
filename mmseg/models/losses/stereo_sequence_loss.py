@@ -22,11 +22,9 @@ def stereo_sequence_loss(pred, target, valid_mask, loss_gamma=0.9):
     Returns:
         list[Tensor]: 损失列表，包含初始损失和迭代损失
     """
-    if not isinstance(pred, (list, tuple)):
-        pred = [pred]
     
-    n_predictions = len(pred)
-    assert n_predictions >= 1, "至少需要一个预测"
+    n_iter_predictions = pred.shape[1]
+    assert n_iter_predictions >= 1, "至少需要一个预测"
     
     disp_loss = []
     
@@ -35,8 +33,8 @@ def stereo_sequence_loss(pred, target, valid_mask, loss_gamma=0.9):
     assert not torch.isinf(target[valid_mask.bool()]).any(), "目标视差图中包含无穷大值"
     
     # 初始预测损失
-    agg_pred = pred[0]
-    assert agg_pred.shape == valid_mask.shape, f"初始预测形状 {agg_pred.shape} 与有效掩码形状 {valid_mask.shape} 不匹配"
+    agg_pred = pred[:, [0], ...]
+    # assert agg_pred.shape == valid_mask.shape, f"初始预测形状 {agg_pred.shape} 与有效掩码形状 {valid_mask.shape} 不匹配"
     
     # 使用Smooth L1损失计算初始预测损失
     initial_loss = F.smooth_l1_loss(
@@ -45,15 +43,16 @@ def stereo_sequence_loss(pred, target, valid_mask, loss_gamma=0.9):
         reduction='mean'
     )
     disp_loss.append(1.0 * initial_loss)
+    total_loss = initial_loss
     
     # 迭代预测损失
-    for i in range(1, n_predictions):
-        iter_pred = pred[i]
+    for i in range(1, n_iter_predictions):
+        iter_pred = pred[:, [i], ...]
         assert iter_pred.shape == valid_mask.shape, f"迭代预测 {i} 形状 {iter_pred.shape} 与有效掩码形状 {valid_mask.shape} 不匹配"
         
         # 计算调整后的损失权重
-        adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
-        i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
+        adjusted_loss_gamma = loss_gamma ** (15 / (n_iter_predictions - 1))
+        i_weight = adjusted_loss_gamma ** (n_iter_predictions - i - 1)
         
         # 计算L1损失
         i_loss = torch.abs(iter_pred - target)
@@ -62,8 +61,8 @@ def stereo_sequence_loss(pred, target, valid_mask, loss_gamma=0.9):
         # 只计算有效像素的损失
         iter_loss = i_loss[valid_mask.bool()].mean()
         disp_loss.append(i_weight * iter_loss)
-    
-    return disp_loss
+        total_loss += i_weight * iter_loss
+    return total_loss
 
 
 @MODELS.register_module()
@@ -112,10 +111,10 @@ class StereoSequenceLoss(nn.Module):
         losses = stereo_sequence_loss(
             pred, 
             target, 
-            valid_mask, 
+            valid_mask=valid_mask, 
             loss_gamma=self.loss_gamma
         )
-        
+        return losses
         # 应用损失权重
         losses = [self.loss_weight * loss for loss in losses]
         

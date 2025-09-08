@@ -35,7 +35,7 @@ class StereoMatchingHead(BaseDecodeHead):
 
         seg_label = self._stack_batch_gt(batch_data_samples)
         loss = dict()
-        assert seg_logits.shape == seg_label.shape, \
+        assert seg_logits.shape[2:] == seg_label.shape[2:], \
             f"seg_logits.shape: {seg_logits.shape}, seg_label.shape: {seg_label.shape}"
         # seg_logits = resize(
         #     input=seg_logits,
@@ -46,8 +46,6 @@ class StereoMatchingHead(BaseDecodeHead):
             seg_weight = self.sampler.sample(seg_logits, seg_label) # TODO 筛最大视差
         else:
             seg_weight = None
-        # ! 由于要计算L1损失，所以需要保持[B 1 H W]的形状
-        # seg_label = seg_label.squeeze(1) 
 
         if not isinstance(self.loss_decode, nn.ModuleList):
             losses_decode = [self.loss_decode]

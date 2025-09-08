@@ -119,7 +119,7 @@ model = dict(
         norm_cfg=norm_cfg,
         align_corners=False,
         loss_decode=[
-            dict(type='L1Loss', loss_name='loss_l1', loss_weight=1.0),
+            dict(type='StereoSequenceLoss', loss_name='loss_l1', loss_weight=1.0),
         ]),
     auxiliary_head=None,
     train_cfg=dict(),
