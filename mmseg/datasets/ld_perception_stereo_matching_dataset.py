@@ -137,8 +137,20 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
         return data_list
     
     def glob_all_left_image_paths(self, data_root: str) -> List[str]:
-        if "SceneFlow" in data_root:
+        if "flyingthings3d" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "left", "*.png"), recursive=True)
+        elif "driving" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**","**","**", "**","left", "*.png"), recursive=True)
+        elif "monkaa" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**","**", "left","*.png"), recursive=True)
+        elif "ETH3d" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "**","im0.png"), recursive=True)
+        elif "kitti" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "raw_img", "**","**","image_02","data", "*.jpg"), recursive=True)
+        elif "HR-VS" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**","trainingF", "**","im0.png"), recursive=True)
+        elif "instereo_2k" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "**", "left.png"), recursive=True)
         elif "crestereo" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "*_left.jpg"), recursive=True)
         elif "falling_things" in data_root:
@@ -150,12 +162,30 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
         return left_img_paths
     
     def parse_right_and_disp_paths_by_left_path(self, left_img_path: str) -> tuple:
-        if "SceneFlow" in left_img_path:
+        if "flyingthings3d" in left_img_path:
             right_img_path = left_img_path.replace("/left/", "/right/")
             left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
-        elif "crestereo" in left_img_path:
+        elif "driving" in left_img_path:
+            right_img_path = left_img_path.replace("/left/", "/right/")
+            left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
+        elif "monkaa" in left_img_path:
+            right_img_path = left_img_path.replace("/left/", "/right/")
+            left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
+        elif "ETH3d" in left_img_path:
+            right_img_path = left_img_path.replace("im0.png", "im1.png")
+            left_disp_path = left_img_path.replace("test", "ground_truth").replace("train", "ground_truth").replace("im0.png", "disp0GT.pfm")
+        elif "kitti" in left_img_path:
+            right_img_path = left_img_path.replace("image_02", "image_03")
+            left_disp_path = left_img_path.replace("raw_img", "eigen_disp").replace(".jpg", ".png")
+        elif "HR-VS" in left_img_path:
+            right_img_path = left_img_path.replace("im0.png", "im1.png")
+            left_disp_path = left_img_path.replace("im0.png", "disp0GT.pfm")
+        elif "instereo_2k" in left_img_path:
+            right_img_path = left_img_path.replace("left.png", "right.png")
+            left_disp_path = left_img_path.replace("left.png", "left_disp.png")
+        elif "crestereo/hole" in left_img_path:
             right_img_path = left_img_path.replace("_left.jpg", "_right.jpg")
-            left_disp_path = left_img_path.replace("_left.jpg", "_left_disp.png")
+            left_disp_path = left_img_path.replace("_left.jpg", "_left.disp.png")
         elif "falling_things" in left_img_path:
             right_img_path = left_img_path.replace(".left.jpg", ".right.jpg")
             left_disp_path = left_img_path.replace(".left.jpg", ".left.depth.png")
@@ -165,6 +195,8 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             assert 0, "待计算视差"
         else:
             raise ValueError(f"不支持的数据集: {left_img_path}")
+        
+        # print(f"left: {left_img_path}, right: {right_img_path}, disp: {left_disp_path}")
         return left_img_path, right_img_path, left_disp_path
 
 

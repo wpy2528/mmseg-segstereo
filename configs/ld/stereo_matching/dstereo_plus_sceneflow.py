@@ -144,27 +144,48 @@ test_pipeline = [
 
 # 定义多个训练数据集
 train_datasets = [
-    dict(
-        type=dataset_type,
-        data_root='sceneflow/SceneFlow_driving',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
-    ),
-    dict(
-        type=dataset_type,
-        data_root='sceneflow/SceneFlow_flyingthings3d',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
-    ),
-    dict(
-        type=dataset_type,
-        data_root='sceneflow/SceneFlow_monkaa',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
-    ),
+    # dict(
+    #     type=dataset_type,
+    #     data_root='sceneflow/SceneFlow_driving',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
+    # dict(
+    #     type=dataset_type,
+    #     data_root='sceneflow/SceneFlow_flyingthings3d',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
+    # dict(
+    #     type=dataset_type,
+    #     data_root='sceneflow/SceneFlow_monkaa',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
+    # dict(
+    #     type=dataset_type,
+    #     data_root='stereo_datasets/ETH3d',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
+    # dict(
+    #     type=dataset_type,
+    #     data_root='stereo_datasets/HR-VS',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
+    #     dict(
+    #     type=dataset_type,
+    #     data_root='stereo_datasets/instereo_2k',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # ),
 ]
 
 train_dataloader = dict(
