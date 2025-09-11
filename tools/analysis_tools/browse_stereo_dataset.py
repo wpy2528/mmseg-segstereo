@@ -102,6 +102,13 @@ def main():
         else:
             src_image_np = img
             left_disp_np = data_sample.left_disp.data[0]
+            if hasattr(data_sample, "disp_mask"):
+                mask_np = data_sample.disp_mask.data[0]
+            else:
+                mask_np = None
+            if np.isinf(left_disp_np).any():    
+                print(f"{left_image_path} left_disp_np 中存在 inf")
+                left_disp_np = np.where(left_disp_np == np.inf, 0, left_disp_np)
 
             # 将src_image_np的最后一个轴拆分为left_image_np和right_image_np
             if src_image_np.shape[2] == 2:
@@ -119,6 +126,8 @@ def main():
             # 用jet色图可视化gt_np
             gt_norm = cv2.normalize(left_disp_np.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
             gt_color_np = cv2.applyColorMap(gt_norm.astype(np.uint8), cv2.COLORMAP_JET)
+            if mask_np is not None:
+                gt_color_np[mask_np != 255] = 0
 
             # 拼接三张图像
             vis_np = np.concatenate([left_image_np_vis, right_image_np_vis, gt_color_np], axis=1)

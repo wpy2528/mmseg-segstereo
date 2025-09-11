@@ -193,6 +193,13 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
         results['left_disp'] = left_disp_np
         results['seg_fields'].append('left_disp')
 
+        # 加载有效区域mask
+        if results['mask_path'] is not None:
+            mask_np = cv2.imread(results['mask_path'], cv2.IMREAD_GRAYSCALE)
+            mask_np[mask_np != 255] = 0
+            results['disp_mask'] = mask_np
+            results['seg_fields'].append('disp_mask')
+
     def __repr__(self) -> str:
         repr_str = self.__class__.__name__
         repr_str += f'(reduce_zero_label={self.reduce_zero_label}, '

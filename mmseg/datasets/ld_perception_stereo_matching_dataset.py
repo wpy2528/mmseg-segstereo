@@ -5,6 +5,7 @@ import time
 import os
 import os.path as osp
 
+from abc import ABC, abstractmethod
 from typing import List
 
 from mmengine.logging import MMLogger, print_log
@@ -14,7 +15,7 @@ from .basesegdataset import BaseSegDataset
 
 
 @DATASETS.register_module()
-class LDPerceptionStereoMatchingDataset(BaseSegDataset):
+class LDPerceptionStereoMatchingDataset(BaseSegDataset, ABC):
     """乐动割草机双目匹配数据集
 
     Args:
@@ -115,34 +116,31 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
                 f.write(line + "\n")
             f.close()
             
-        for line in left_image_paths:
-            left_img_path, right_img_path, left_disp_path = self.parse_right_and_disp_paths_by_left_path(line)
+        for left_img_path in left_image_paths:
+            right_img_path, left_disp_path, mask_path = self.parse_right_and_disp_and_mask_paths_by_left_path(left_img_path)
             data_info = dict(
                 left_img_path=left_img_path,
                 right_img_path=right_img_path,
-                left_disp_path=left_disp_path
+                left_disp_path=left_disp_path,
+                mask_path=mask_path
             )
-            data_info['left_disp_path'] = left_disp_path
             data_info['label_map'] = None
             data_info['reduce_zero_label'] = False
             data_info['seg_fields'] = []
             data_list.append(data_info)
         
         if self.test_mode:
-            print_log(f"测试集 共计 {len(data_list)} 个样本", logger="current")
+            print_log(f"测试集 {self.data_root} 共计 {len(data_list)} 个样本", logger="current")
         else:
-            print_log(f"训练集 共计 {len(data_list)} 个样本", logger="current")
+            print_log(f"训练集 {self.data_root} 共计 {len(data_list)} 个样本", logger="current")
         assert len(data_list) > 0, "数据集为空"
         time.sleep(1)
         return data_list
     
+    @abstractmethod
     def glob_all_left_image_paths(self, data_root: str) -> List[str]:
-        if "flyingthings3d" in data_root:
+        if "SceneFlow" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "left", "*.png"), recursive=True)
-        elif "driving" in data_root:
-            left_img_paths = glob.glob(os.path.join(data_root, "**","**","**", "**","left", "*.png"), recursive=True)
-        elif "monkaa" in data_root:
-            left_img_paths = glob.glob(os.path.join(data_root, "**","**", "left","*.png"), recursive=True)
         elif "ETH3d" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "**","im0.png"), recursive=True)
         elif "kitti" in data_root:
@@ -161,14 +159,9 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
             raise ValueError(f"不支持的数据集: {data_root}")
         return left_img_paths
     
-    def parse_right_and_disp_paths_by_left_path(self, left_img_path: str) -> tuple:
-        if "flyingthings3d" in left_img_path:
-            right_img_path = left_img_path.replace("/left/", "/right/")
-            left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
-        elif "driving" in left_img_path:
-            right_img_path = left_img_path.replace("/left/", "/right/")
-            left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
-        elif "monkaa" in left_img_path:
+    @abstractmethod
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        if "SceneFlow" in left_img_path:
             right_img_path = left_img_path.replace("/left/", "/right/")
             left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
         elif "ETH3d" in left_img_path:
@@ -199,6 +192,87 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset):
         # print(f"left: {left_img_path}, right: {right_img_path}, disp: {left_disp_path}")
         return left_img_path, right_img_path, left_disp_path
 
+@DATASETS.register_module()
+class SceneFlowDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "left", "*.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("/left/", "/right/")
+        left_disp_path = left_img_path.replace("/images/", "/disparity/").replace(".png", ".pfm")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class ETH3dDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "**","im0.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("im0.png", "im1.png")
+        left_disp_path = left_img_path.replace("test", "ground_truth").replace("train", "ground_truth").replace("im0.png", "disp0GT.pfm")
+        mask_path = os.path.join(os.path.dirname(left_disp_path), "mask0nocc.png")
+        return right_img_path, left_disp_path, mask_path
+
+@DATASETS.register_module()
+class KittiDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "raw_img", "**","**","image_02","data", "*.jpg"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("image_02", "image_03")
+        left_disp_path = left_img_path.replace("raw_img", "eigen_disp").replace(".jpg", ".png")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class HRVSDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**","trainingF", "**","im0.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("im0.png", "im1.png")
+        left_disp_path = left_img_path.replace("im0.png", "disp0GT.pfm")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class Instereo2kDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "**", "left.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("left.png", "right.png")
+        left_disp_path = left_img_path.replace("left.png", "left_disp.png")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class CrestereoHoleDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "*_left.jpg"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("_left.jpg", "_right.jpg")
+        left_disp_path = left_img_path.replace("_left.jpg", "_left.disp.png")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class FallingThingsDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "*.left.jpg"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace(".left.jpg", ".right.jpg")
+        left_disp_path = left_img_path.replace(".left.jpg", ".left.depth.png")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class GenerateIsaacDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "Replicator", "**", "rgb_*.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("Replicator", "Replicator_01")
+        depth_path = left_img_path.replace("/rgb/", "/distance_to_image_plane/").replace(".png", ".npy")
+        assert 0, "待计算视差"
+        return right_img_path, left_disp_path, None
 
 if __name__ == "__main__":
     dataset = LDPerceptionStereoMatchingDataset(

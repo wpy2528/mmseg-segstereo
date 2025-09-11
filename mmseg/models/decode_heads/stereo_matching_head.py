@@ -98,7 +98,10 @@ class StereoMatchingHead(BaseDecodeHead):
             size = batch_img_metas[0]['img_shape']
         
         # 检查seg_logits的形状是否与size一致
-        assert seg_logits.shape[2] == size[0] and seg_logits.shape[3] == size[1], \
-            f"seg_logits.shape: {seg_logits.shape}, size: {size}"
+        if isinstance(seg_logits, torch.Tensor):
+            assert seg_logits.shape[2] == size[0] and seg_logits.shape[3] == size[1], \
+                f"seg_logits.shape: {seg_logits.shape}, size: {size}"
+        else:
+            print(f"seg_logits是一个 {type(seg_logits)} 类型，请检查输出")
         
         return seg_logits
