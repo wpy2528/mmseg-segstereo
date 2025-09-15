@@ -4,6 +4,17 @@ import glob
 import cv2
 import numpy as np
 import onnxruntime
+import torch
+import torch.nn.functional as F
+
+
+def postprocess(data):
+    disp_unfold, spx = data
+    disp_unfold = torch.from_numpy(disp_unfold)
+    spx = torch.from_numpy(spx)
+    disp_unfold = F.interpolate(disp_unfold,(352, 640),mode='nearest').reshape(1,9,352, 640)
+    disp = torch.sum(disp_unfold*spx, 1, keepdim=False)[0]
+    return disp.cpu().numpy()
 
 def main():
     parser = argparse.ArgumentParser(description="ONNX双输入（left/right）单输出模型推理")
@@ -23,14 +34,15 @@ def main():
         raise FileNotFoundError("左图像或右图像读取失败，请检查路径。")
 
     # 转为float32，归一化到[0,1]，并转为NCHW
-    left_image_np = left_image_np.astype(np.float32) / 255.0
-    right_image_np = right_image_np.astype(np.float32) / 255.0
+    left_image_np = (left_image_np.astype(np.float32) - 128.0) / 128.0  
+    right_image_np = (right_image_np.astype(np.float32) - 128.0) / 128.0
     left_image_np = np.transpose(left_image_np, (2, 0, 1))[np.newaxis, ...]
     right_image_np = np.transpose(right_image_np, (2, 0, 1))[np.newaxis, ...]
 
     # 加载onnx模型
     session = onnxruntime.InferenceSession(args.onnx_path, providers=['CPUExecutionProvider'])
     input_names = [inp.name for inp in session.get_inputs()]
+    output_names = [output.name for output in session.get_outputs()]
     if len(input_names) != 2:
         raise RuntimeError("模型输入数量不是2，请检查onnx模型。")
     output_name = session.get_outputs()[0].name
@@ -40,8 +52,9 @@ def main():
         input_names[0]: left_image_np,
         input_names[1]: right_image_np
     }
-    ort_outs = session.run([output_name], ort_inputs)
-    output_np = ort_outs[0]
+    onnx_result = session.run(output_names, ort_inputs)
+    infer_disp = postprocess(onnx_result)
+    output_np = infer_disp
 
     # 保存输出（假设输出为单通道图像，保存为16位png）
     if output_np.ndim == 4:
@@ -49,7 +62,7 @@ def main():
     if output_np.shape[0] == 1:
         output_np = output_np[0]
     mask_np = np.squeeze(output_np)
-    print(mask_np.max(), mask_np.min())
+    print(mask_np.shape, mask_np.max(), mask_np.min())
     
     
     # 归一化到0-255
