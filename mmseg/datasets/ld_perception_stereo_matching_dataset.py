@@ -153,6 +153,8 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset, ABC):
             left_img_paths = glob.glob(os.path.join(data_root, "**", "*_left.jpg"), recursive=True)
         elif "falling_things" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "*.left.jpg"), recursive=True)
+        elif "tartanair" in data_root:
+            left_img_paths = glob.glob(os.path.join(data_root, "**", "image_left", "*.png"), recursive=True)
         elif "generate_isaac" in data_root:
             left_img_paths = glob.glob(os.path.join(data_root, "**", "Replicator", "**", "rgb_*.png"), recursive=True)
         else:
@@ -182,6 +184,9 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset, ABC):
         elif "falling_things" in left_img_path:
             right_img_path = left_img_path.replace(".left.jpg", ".right.jpg")
             left_disp_path = left_img_path.replace(".left.jpg", ".left.depth.png")
+        elif "tartanair" in left_img_path:
+            right_img_path = left_img_path.replace("image_left", "image_right").replace("left", "right")
+            left_disp_path = left_img_path.replace("_left.", "_left_depth.").replace("image_left", "depth_left").replace(".png", ".npy")
         elif "generate_isaac" in left_img_path:
             right_img_path = left_img_path.replace("Replicator", "Replicator_01")
             depth_path = left_img_path.replace("/rgb/", "/distance_to_image_plane/").replace(".png", ".npy")
