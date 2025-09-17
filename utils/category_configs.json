@@ -20,14 +20,13 @@
 },
 
 "occlusion": {
-    "category_fill_priority": ["background", "occu", "glare", "pure_background"],
+    "category_fill_priority": ["background", "glare", "occu"],
     "category_map": {
         "background": 0,
         "occu": 1,
-        "glare": 2,
-        "pure_background": 3
+        "glare": 2
     },
-    "ignored_categories": [],
+    "ignored_categories": ["pure_background"],
     "same_category_map": {
         "sky": "glare",
         "transfer_occu": "occu"

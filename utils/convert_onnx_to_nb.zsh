@@ -3,6 +3,7 @@
 set -e
 
 src_onnx_path=$1
+src_calibration_dataset_dir=$2
 
 mean=0.0
 std=255.0
@@ -16,6 +17,12 @@ fi
 # 检查onnx文件是否存在
 if [ ! -f "$src_onnx_path" ]; then
     echo "onnx文件不存在"
+    exit 1
+fi
+
+# 检查calibration_dataset是不是一个目录
+if [ ! -d "$src_calibration_dataset_dir" ]; then
+    echo "calibration_dataset不存在或不是一个目录"
     exit 1
 fi
 
@@ -51,6 +58,13 @@ echo "onnx文件的md5: $(md5sum $src_onnx_path)"
 docker exec $container_id mkdir -p /workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation
 # 把onnx文件拷贝到docker中
 docker cp $src_onnx_path $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/model_grass_segmentation/model_grass_segmentation.onnx
+
+# 删除 calibration_dataset 目录
+docker exec $container_id rm -rf /workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/calibration_dataset
+
+# 将 $2 复制为 calibration_dataset 目录
+docker cp "$src_calibration_dataset_dir" $container_id:/workspace/board-demo-T527/docker_images_v1.8.x/model-convert/grass_segmentation/calibration_dataset
+
 
 # 进入docker执行模型转换，生成预处理和后处理yml文件
 docker exec -i $container_id bash <<'EOF'

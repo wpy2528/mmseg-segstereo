@@ -44,7 +44,11 @@ def parse_labelstudio_to_coco(
 
         polygon_catgory_pairs = []
         for e in anno['annotations'][0]['result']:
-            polygon_catogry = e['value']['polygonlabels'][0]
+            try:
+                polygon_catogry = e['value']['polygonlabels'][0]
+            except:
+                print(f"🚨 {src_image_path} 没有polygonlabels")
+                continue
             if polygon_catogry in ignored_categories:
                 continue
             if polygon_catogry in same_category_map:
