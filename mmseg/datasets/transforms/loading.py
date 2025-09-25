@@ -260,6 +260,7 @@ class LoadAnnotations(MMCV_LoadAnnotations):
         reduce_zero_label=None,
         backend_args=None,
         imdecode_backend='pillow',
+        to_uint8=True,
     ) -> None:
         super().__init__(
             with_bbox=False,
@@ -275,7 +276,7 @@ class LoadAnnotations(MMCV_LoadAnnotations):
                           'set `reduce_zero_label=True` when dataset '
                           'initialized')
         self.imdecode_backend = imdecode_backend
-
+        self.to_uint8 = to_uint8
     def _load_seg_map(self, results: dict) -> None:
         """Private function to load semantic segmentation annotations.
 
@@ -290,7 +291,9 @@ class LoadAnnotations(MMCV_LoadAnnotations):
             results['seg_map_path'], backend_args=self.backend_args)
         gt_semantic_seg = mmcv.imfrombytes(
             img_bytes, flag='unchanged',
-            backend=self.imdecode_backend).squeeze().astype(np.uint8)
+            backend=self.imdecode_backend).squeeze()
+        if self.to_uint8:
+            gt_semantic_seg = gt_semantic_seg.astype(np.uint8)
 
         # reduce zero_label
         if self.reduce_zero_label is None:

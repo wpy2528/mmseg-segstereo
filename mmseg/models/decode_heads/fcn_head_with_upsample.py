@@ -8,7 +8,7 @@ from .fcn_head import FCNHead
 class FCNHeadWithUpsample(FCNHead):
     """Decoder head for STDC self-supervised image reconstruction."""
 
-    def __init__(self, upsample_channels=3, **kwargs):
+    def __init__(self, upsample_channels, **kwargs):
         super().__init__(**kwargs)
 
         self.upsample_head = nn.Sequential(

@@ -26,7 +26,6 @@ class LDPerceptionMonocularDepthDataset(BaseSegDataset):
     )
     def __init__(self,
                  data_root,
-                 class_names,
                  ann_file=None,
                  img_suffix='.jpg',
                  depth_suffix='.png',
@@ -34,11 +33,6 @@ class LDPerceptionMonocularDepthDataset(BaseSegDataset):
                  repeat=None,
                  exclude=None,
                  **kwargs) -> None:
-        assert isinstance(class_names, (tuple, list)), type(class_names)
-        LDPerceptionMonocularDepthDataset.METAINFO = dict(
-            classes = class_names,
-            palette = PALETTE
-        )
         # include和exclude不能同时存在，如果非None，则必须为list
         assert include is None or exclude is None, "include和exclude不能同时存在"
         if include is not None:
@@ -61,9 +55,9 @@ class LDPerceptionMonocularDepthDataset(BaseSegDataset):
         self.repeat = repeat
         print(f"include: {self.include}, exclude: {self.exclude}, repeat: {self.repeat}")
         
+        self.depth_suffix = depth_suffix
         super().__init__(
             img_suffix=img_suffix,
-            depth_suffix=depth_suffix,
             ann_file=ann_file,
             data_root=data_root,
             **kwargs)
@@ -85,7 +79,7 @@ class LDPerceptionMonocularDepthDataset(BaseSegDataset):
                     lines.extend([line.strip() for line in f.readlines()])
         else:
             assert os.path.isdir(self.data_root), self.data_root
-            lines = glob.glob(os.path.join(self.data_root, "**", "images", "*.jpg"), recursive=True)
+            lines = glob.glob(os.path.join(self.data_root, "**", "Color", "*.jpg"), recursive=True)
 
         # 进行数据集增删时，允许给定的关键字是数据路径中的子串，也可以是txt文件路径。
         # 如果是子串，那么对包含子串的数据路径进行处理；如果是txt文件路径，那么直接读取txt中的内容，对这些内容进行对应的处理。
@@ -138,7 +132,9 @@ class LDPerceptionMonocularDepthDataset(BaseSegDataset):
             src_image_path = line
             data_info = dict(
                 img_path=src_image_path)
-            data_info['depth_path'] = src_image_path.replace("/images/", "/depth/").replace(self.img_suffix, self.depth_suffix)
+            data_info['seg_map_path'] = src_image_path.replace("/Color/", "/Depth/").replace(self.img_suffix, self.depth_suffix)
+            data_info['reduce_zero_label'] = False
+            data_info['seg_fields'] = []
             data_list.append(data_info)
         
         if self.test_mode:

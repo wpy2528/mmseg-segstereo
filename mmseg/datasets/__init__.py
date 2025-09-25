@@ -46,6 +46,7 @@ from .ld_perception_pretrain_dataset import LDPerceptionPretrainDataset
 from .samplers import FrontAndSideImageBatchSampler
 from .ld_perception_stereo_matching_dataset import LDPerceptionStereoMatchingDataset
 from .transforms.stereo_aug.resize_stereo_images import ResizeStereoImages
+from .ld_perception_monocular_depth_dataset import LDPerceptionMonocularDepthDataset
 # yapf: enable
 __all__ = [
     'BaseSegDataset', 'BioMedical3DRandomCrop', 'BioMedical3DRandomFlip',
@@ -77,5 +78,6 @@ __all__ = [
     'CREStereoAugmentor',
     'FlowAugmentor',
     'SparseFlowAugmentor',
-    'ResizeStereoImages'
+    'ResizeStereoImages',
+    'LDPerceptionMonocularDepthDataset'
 ]
