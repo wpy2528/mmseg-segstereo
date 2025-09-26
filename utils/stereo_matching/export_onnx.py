@@ -24,9 +24,18 @@ def export_onnx(config, checkpoint, device, input_hw=(320, 320)):
     dst_onnx_path = checkpoint.replace(".pth", ".onnx")
     dummy_left = torch.zeros(1, 3, input_hw[0], input_hw[1]).float()
     dummy_right = torch.zeros(1, 3, input_hw[0], input_hw[1]).float()
+    
+    # 测试模型输出个数
+    output_count = 1
+    with torch.no_grad():
+        test_input = ((dummy_left, dummy_right), None, "export_stereo_matching")
+        test_output = model(*test_input)
+        if isinstance(test_output, tuple):
+            output_count = len(test_output)
+    
     # model.backbone.forward = model.backbone.forward_inner
     torch.onnx.export(
-        model, ((dummy_left, dummy_right), None, "export_stereo_matching"), dst_onnx_path, input_names=["left", "right"], output_names=["output"],
+        model, ((dummy_left, dummy_right), None, "export_stereo_matching"), dst_onnx_path, input_names=["infra1", "infra2"], output_names=(["disp", "spx"] if output_count == 2 else ["disp"]),
         dynamic_axes=None,
         opset_version=11
     )
