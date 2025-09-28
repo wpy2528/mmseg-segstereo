@@ -265,7 +265,7 @@ class FallingThingsDataset(LDPerceptionStereoMatchingDataset):
     
     def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
         right_img_path = left_img_path.replace(".left.jpg", ".right.jpg")
-        left_disp_path = left_img_path.replace(".left.jpg", ".left.depth.png")
+        left_disp_path = left_img_path.replace(".left.jpg", ".tiff").replace(os.path.dirname(left_img_path),str(os.path.dirname(left_img_path)+'_disp_gt'))
         return right_img_path, left_disp_path, None
 
 @DATASETS.register_module()

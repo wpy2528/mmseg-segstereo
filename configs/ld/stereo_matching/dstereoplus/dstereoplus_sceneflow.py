@@ -126,7 +126,6 @@ model = dict(
     test_cfg=dict(mode='whole'))
 
 # ===== Dataset / Dataloader Settings =====
-dataset_type = 'LDPerceptionStereoMatchingDataset'
 
 train_pipeline = [
     dict(type='LoadStereoImages', color_type='color'),
@@ -145,22 +144,36 @@ test_pipeline = [
 # 定义多个训练数据集
 train_datasets = [
     dict(
-        type=dataset_type,
+        type='SceneFlowDataset',
         data_root='sceneflow/SceneFlow_driving',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
     dict(
-        type=dataset_type,
+        type='SceneFlowDataset',
         data_root='sceneflow/SceneFlow_flyingthings3d',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
     dict(
-        type=dataset_type,
+        type='SceneFlowDataset',
         data_root='sceneflow/SceneFlow_monkaa',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+        dict(
+        type="CrestereoHoleDataset",
+        data_root='/data_SSD2/crestereo',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+        dict(
+        type="TartanAIRDataset",
+        data_root='/data_SSD2/tartanair',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
@@ -185,7 +198,7 @@ val_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
-        type=dataset_type,
+        type='SceneFlowDataset',
         data_root='stereo_datasets/SceneFlow_driving',
         num_classes=NUM_CLASSES,
         pipeline=test_pipeline,

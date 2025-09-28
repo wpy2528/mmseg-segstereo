@@ -185,16 +185,16 @@ train_datasets = [
         pipeline=train_pipeline,
         test_mode=False
     ),
-    # dict(
-    #     type="FallingThingsDataset",
-    #     data_root='/data_SSD2/falling_things',
-    #     num_classes=NUM_CLASSES,
-    #     pipeline=train_pipeline,
-    #     test_mode=False
-    # ),
+    dict(
+        type="FallingThingsDataset",
+        data_root='/SDB-8T/depth_open_source_dataset/falling_things',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
     dict(
         type="CrestereoHoleDataset",
-        data_root='/data_SSD2/crestereo_dataset',
+        data_root='/data_SSD2/crestereo',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
