@@ -279,6 +279,17 @@ class GenerateIsaacDataset(LDPerceptionStereoMatchingDataset):
         assert 0, "待计算视差"
         return right_img_path, left_disp_path, None
 
+@DATASETS.register_module()
+class TartanAIRDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**", "Easy","**","image_left", "*.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("image_left", "image_right").replace("left", "right")
+        left_disp_path = left_img_path.replace("_left.", ".").replace("image_left", "disp_gt").replace(".png", ".tiff")
+        return right_img_path, left_disp_path, None
+
+
 if __name__ == "__main__":
     dataset = LDPerceptionStereoMatchingDataset(
         data_root="stereo_datasets/SceneFlow_driving",

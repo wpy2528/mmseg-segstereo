@@ -143,27 +143,27 @@ test_pipeline = [
 
 # 定义多个训练数据集
 train_datasets = [
-    # dict(
-    #     type="SceneFlowDataset",
-    #     data_root='sceneflow/SceneFlow_driving',
-    #     num_classes=NUM_CLASSES,
-    #     pipeline=train_pipeline,
-    #     test_mode=False
-    # ),
-    # dict(
-    #     type="SceneFlowDataset",
-    #     data_root='sceneflow/SceneFlow_flyingthings3d',
-    #     num_classes=NUM_CLASSES,
-    #     pipeline=train_pipeline,
-    #     test_mode=False
-    # ),
-    # dict(
-    #     type="SceneFlowDataset",
-    #     data_root='sceneflow/SceneFlow_monkaa',
-    #     num_classes=NUM_CLASSES,
-    #     pipeline=train_pipeline,
-    #     test_mode=False
-    # ),
+    dict(
+        type="SceneFlowDataset",
+        data_root='sceneflow/SceneFlow_driving',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+    dict(
+        type="SceneFlowDataset",
+        data_root='sceneflow/SceneFlow_flyingthings3d',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
+    dict(
+        type="SceneFlowDataset",
+        data_root='sceneflow/SceneFlow_monkaa',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
     # dict(
     #     type="ETH3dDataset",
     #     data_root='stereo_datasets/ETH3d',
@@ -178,16 +178,23 @@ train_datasets = [
     #     pipeline=train_pipeline,
     #     test_mode=False
     # ),
+    dict(
+        type="TartanAIRDataset",
+        data_root='/data_SSD2/tartanair',
+        num_classes=NUM_CLASSES,
+        pipeline=train_pipeline,
+        test_mode=False
+    ),
     # dict(
-    #     type="Instereo2kDataset",
-    #     data_root='stereo_datasets/instereo_2k',
+    #     type="FallingThingsDataset",
+    #     data_root='/data_SSD2/falling_things',
     #     num_classes=NUM_CLASSES,
     #     pipeline=train_pipeline,
     #     test_mode=False
     # ),
     dict(
-        type="FallingThingsDataset",
-        data_root='stereo_datasets/falling_things',
+        type="CrestereoHoleDataset",
+        data_root='/data_SSD2/crestereo_dataset',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False

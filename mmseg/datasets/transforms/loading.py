@@ -13,6 +13,7 @@ from mmcv.transforms import LoadImageFromFile
 
 from mmseg.registry import TRANSFORMS
 from mmseg.utils import datafrombytes
+from PIL import Image
 
 try:
     from osgeo import gdal
@@ -186,6 +187,8 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
             left_disp_np = cv2.imread(results['left_disp_path'], cv2.IMREAD_GRAYSCALE)
         elif results['left_disp_path'].endswith('.npy'):
             left_disp_np = np.load(results['left_disp_path'])
+        elif results['left_disp_path'].endswith('.tiff') or results['left_disp_path'].endswith('.tif'):
+            left_disp_np = np.array(Image.open(results['left_disp_path']))
         else:
             raise ValueError(f"不支持的深度图格式: {results['left_disp_path']}")
         left_disp_np = np.abs(left_disp_np) # ! stereo_datasets/SceneFlow_flyingthings3d 数据集的数值是负的
