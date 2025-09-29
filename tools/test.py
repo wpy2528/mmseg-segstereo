@@ -98,7 +98,8 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
 
     if '/' not in args.checkpoint:
-        args.checkpoint = osp.join(cfg.work_dir, args.checkpoint)
+        args.checkpoint = os.path.join("work_dirs", os.path.splitext(args.config.split("configs/")[-1])[0], args.checkpoint)
+        print(f"给定的checkpoint不是完整路径，拓展为 {args.checkpoint}")
     cfg.load_from = args.checkpoint
 
     if args.show or args.show_dir:
