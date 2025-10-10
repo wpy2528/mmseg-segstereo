@@ -12,6 +12,8 @@ from mmseg.apis import inference_model, init_model, show_result_pyplot
 from flask import Flask, request, jsonify, send_file
 from io import BytesIO
 import hashlib
+from utils.stereo_matching.visualize_disp import pfm_imread
+import time
 
 def get_color_mask(mask):
     color_mask = np.zeros_like(mask, dtype=np.uint8)
@@ -24,19 +26,24 @@ def get_color_mask(mask):
 
 
 def infer_image(model, left_image_path, args):
-    right_image_path = left_image_path.replace("left", "right")
+    right_image_path = left_image_path.replace("left","right")
     print(left_image_path)
     print(right_image_path)
     left_image_np = cv2.imread(left_image_path)
     right_image_np = cv2.imread(right_image_path)
     result = dict(left_img_path=left_image_path, right_img_path=right_image_path)
-    gt_image_path = left_image_path.replace("/images/", "/labels/").replace(".jpg", ".png")
+    gt_image_path = left_image_path.replace("/images/", "/disparity/").replace(".jpg", ".pfm")
     result = inference_model(model, result)
     # if os.path.exists(gt_image_path):
     #     result['left_disp_path'] = gt_image_path
     if (gt_image_path != left_image_path and os.path.exists(gt_image_path)):
         draw_gt = True
-        gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE)
+
+        if gt_image_path.endswith(".pfm"):
+            gt_image = np.abs(pfm_imread(gt_image_path))
+            # gt_image = (gt_image * 256).astype(np.uint16)
+        # gt_image = cv2.imread(gt_image_path, cv2.IMREAD_GRAYSCALE)
+
         vis_gt = cv2.addWeighted(left_image_np, 1, get_color_mask(gt_image), 0.5, 0)
         cv2.putText(vis_gt, "gt", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         result.gt_sem_seg = PixelData(data=gt_image)
@@ -67,7 +74,7 @@ def infer_image(model, left_image_path, args):
     if draw_gt:
         res = np.hstack([res, vis_gt])
         postfix = ".png"
-    cv2.imwrite(os.path.join(args.out_file, os.path.basename(left_image_path).replace(".jpg", postfix)), res)
+    cv2.imwrite(os.path.join(args.out_file, str(time.time())+os.path.basename(left_image_path).replace(".jpg", postfix)), res)
 
 
 def main():
@@ -79,7 +86,7 @@ def main():
     parser.add_argument('--save-pred-mask', action='store_true', help='Save predicted mask')
     parser.add_argument('--pred-is-image', action='store_true')
     parser.add_argument(
-        '--device', default='cuda:0', help='Device used for inference')
+        '--device', default='cuda:1', help='Device used for inference')
     parser.add_argument(
         '--opacity',
         type=float,
@@ -165,6 +172,7 @@ def main():
             left_image_paths = glob.glob(os.path.join(args.img, "**", "left*.png"), recursive=True)
         else:
             left_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
+            # left_image_paths =   glob.glob(os.path.join(args.img, "**","left","*.png"), recursive=True) #+ glob.glob(os.path.join(args.img, "**", "left","*_1.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
         # 排除包含/labels/的图片
         left_image_paths = [path for path in left_image_paths if "/labels/" not in path]
             
