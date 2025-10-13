@@ -164,20 +164,6 @@ train_datasets = [
         pipeline=train_pipeline,
         test_mode=False
     ),
-        dict(
-        type="CrestereoHoleDataset",
-        data_root='/data_SSD2/crestereo',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
-    ),
-        dict(
-        type="TartanAIRDataset",
-        data_root='/data_SSD2/tartanair',
-        num_classes=NUM_CLASSES,
-        pipeline=train_pipeline,
-        test_mode=False
-    ),
 ]
 
 train_dataloader = dict(
