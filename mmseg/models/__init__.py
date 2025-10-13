@@ -10,12 +10,8 @@ from .necks import *  # noqa: F401,F403
 from .segmentors import *  # noqa: F401,F403
 from .text_encoder import *  # noqa: F401,F403
 
-try:
-    from hat.models.backbones.mixvargenet import MixVarGENet
-    from hat.models.structures.stereo_match.dstereoplus import DStereoPlus
-except ImportError:
-    print("没找着地平线那一套牛逼玩意 别扯犊子了")
-    pass
+from .backbones.stereo_match.backbones.mixvargenet import MixVarGENet
+from .backbones.stereo_match.dstereoplus import DStereoPlus
 
 __all__ = [
     'BACKBONES', 'HEADS', 'LOSSES', 'SEGMENTORS', 'build_backbone',
