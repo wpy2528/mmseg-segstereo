@@ -173,8 +173,8 @@ def main():
         else:
             left_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
             # left_image_paths =   glob.glob(os.path.join(args.img, "**","left","*.png"), recursive=True) #+ glob.glob(os.path.join(args.img, "**", "left","*_1.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
-        # 排除包含/labels/的图片
-        left_image_paths = [path for path in left_image_paths if "/labels/" not in path]
+        # 排除包含/labels/ 和 right 的图片
+        left_image_paths = [path for path in left_image_paths if (("/labels/" not in path) and ("right" not in path))]
             
     for left_image_path in tqdm(left_image_paths):
         infer_image(model, left_image_path, args)
