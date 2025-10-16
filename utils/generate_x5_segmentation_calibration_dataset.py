@@ -38,6 +38,7 @@ if __name__ == "__main__":
         src_image_np = cv2.resize(src_image_np, (args.w, args.h))
         if args.export_color_type == "rgb":
             vis_image_np = cv2.cvtColor(src_image_np, cv2.COLOR_BGR2RGB)
+            raise NotImplementedError("通过 hat/callbacks/save_eval_results/save_disp_result.py 代码来看，转rgb需要BCHW格式，即需要先transpose(0, 1, 2) 这个需要检查一下")
         else:
             vis_image_np = cv2.cvtColor(src_image_np, cv2.COLOR_BGR2GRAY)
         dtype = np.float32

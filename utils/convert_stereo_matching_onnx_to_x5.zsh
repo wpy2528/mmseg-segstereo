@@ -66,21 +66,25 @@ docker cp $src_onnx_path $container_id:/rdk_model_zoo/demos/stereo_matching/DSte
 
 # 检查标定数据集目录是否合法
 python utils/x5/check_x5_stereo_matching_calibration_dataset_validation.py $src_calibration_dataset_dir
-# 将 $2 复制为 calibration_dataset 目录
-docker cp "$src_calibration_dataset_dir" $container_id:/rdk_model_zoo/demos/stereo_matching/DStereo_X5/ptq_mm_bgr/calib_data
+# 删除旧的标定数据集目录，并生成新的标定数据集目录
+rm -r rdk_model_zoo/demos/stereo_matching/DStereo_X5/ptq_mm_bgr/calib_data
+cp -r $src_calibration_dataset_dir rdk_model_zoo/demos/stereo_matching/DStereo_X5/ptq_mm_bgr/calib_data
 
 # 进入docker执行模型量化，生成bin文件
 docker exec -i $container_id bash <<'EOF'
 cd /rdk_model_zoo/demos/stereo_matching/DStereo_X5
+echo "替换mul和reducesum算子为gemm算子..."
+python3.10 ptq_mm_bgr/replace_mul_reducesum.py ptq_mm_bgr/float.onnx ptq_mm_bgr/float_modify.onnx
+echo "量化模型..."
 hb_mapper makertbin -c ptq_mm_bgr/D-StereoPlus_bgr.yaml --model-type onnx
 echo "模型量化完成！"
 
 # 推理bin文件并可视化验证正确性
-python3 ptq_mm_bgr/infer_quant_onnx.py --onnx_path ptq_mm_bgr/model_output_bgr/DStereoV23_quantized_model.onnx --input_dir /rdk_model_zoo/resource/stereo/ --result_path vis_bgr_quant
+python3.10 ptq_mm_bgr/infer_quant_onnx.py --onnx_path ptq_mm_bgr/model_output_bgr/DStereoV23_quantized_model.onnx --input_dir /rdk_model_zoo/resource/stereo/ --result_path vis_bgr_quant
 echo "推理完成！请检查vis_bgr_quant目录下的结果是否正确"
 EOF
 
-# 把生成的nb文件拷贝到src_onnx_path的目录下
+# 把生成的bin文件拷贝出来
 dst_dir=$(dirname $src_onnx_path)
 dst_bin_path=${dst_dir}/model_stereo_matching.bin
 docker cp $container_id:/rdk_model_zoo/demos/stereo_matching/DStereo_X5/ptq_mm_bgr/model_output_bgr/DStereoV23.bin $dst_bin_path
