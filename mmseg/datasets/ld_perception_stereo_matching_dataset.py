@@ -76,7 +76,7 @@ class LDPerceptionStereoMatchingDataset(BaseSegDataset, ABC):
             if isinstance(self.ann_file, list):
                 ann_files = self.ann_file
             elif osp.isfile(self.ann_file):
-                ann_files = [self.ann_file]
+                ann_files = [self.ann_file]          
             else:
                 raise ValueError(f'你这鸟玩意既不是一个文件也不是一个列表，你搁这逗我玩呢？ {self.ann_file}')
 
@@ -235,6 +235,16 @@ class TartanAIRDataset(LDPerceptionStereoMatchingDataset):
     def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
         right_img_path = left_img_path.replace("image_left", "image_right").replace("left", "right")
         left_disp_path = left_img_path.replace("_left.", ".").replace("image_left", "disp_gt").replace(".png", ".tiff")
+        return right_img_path, left_disp_path, None
+
+@DATASETS.register_module()
+class IRSStereoDataset(LDPerceptionStereoMatchingDataset):
+    def glob_all_left_image_paths(self, data_root: str) -> List[str]:
+        return glob.glob(os.path.join(data_root, "**","l_*.png"), recursive=True)
+    
+    def parse_right_and_disp_and_mask_paths_by_left_path(self, left_img_path: str) -> tuple:
+        right_img_path = left_img_path.replace("l_*.png", "r_*.png")
+        left_disp_path = left_img_path.replace("l_*.png", "d_*.exr")
         return right_img_path, left_disp_path, None
 
 

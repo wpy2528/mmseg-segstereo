@@ -21,6 +21,7 @@ except ImportError:
     gdal = None
 
 from utils.stereo_matching.visualize_disp import pfm_imread
+from utils.stereo_matching.load_exr import load_exr
 
 
 @TRANSFORMS.register_module()
@@ -183,6 +184,12 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
 
         if results['left_disp_path'].endswith('.pfm'):
             left_disp_np = pfm_imread(results['left_disp_path'])
+        elif results['left_disp_path'].endswith('.disp.png'):
+            left_disp_np = cv2.imread(results['left_disp_path'], cv2.IMREAD_UNCHANGED).astype(np.float32) / 32
+        elif results['left_disp_path'].endswith('.exr'):
+            left_disp_np = load_exr(results['left_disp_path'])
+            left_disp_np = left_disp_np[np.newaxis,:]
+            left_disp_np = left_disp_np.astype(np.float32)
         elif results['left_disp_path'].endswith('.png'):
             left_disp_np = cv2.imread(results['left_disp_path'], cv2.IMREAD_GRAYSCALE)
         elif results['left_disp_path'].endswith('.npy'):

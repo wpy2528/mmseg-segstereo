@@ -26,7 +26,11 @@ def get_color_mask(mask):
 
 
 def infer_image(model, left_image_path, args):
-    right_image_path = left_image_path.replace("left","right")
+    if 'irs' in left_image_path:
+        right_image_path = left_image_path.replace("l_","r_")
+    else:
+        right_image_path = left_image_path.replace("left","right")
+    
     print(left_image_path)
     print(right_image_path)
     left_image_np = cv2.imread(left_image_path)
@@ -105,6 +109,7 @@ def main():
     parser.add_argument(
         '--title', default='result', help='The image identifier.')
     parser.add_argument("--port", type=int, default=5000, help='The port of the server.')
+    parser.add_argument("--shuffle", action='store_true', help="Whether to shuffle the input image list.")
     args = parser.parse_args()
 
     if '/' not in args.checkpoint:
@@ -170,12 +175,26 @@ def main():
     elif os.path.isdir(args.img):
         if "x5_stereo" in args.img:
             left_image_paths = glob.glob(os.path.join(args.img, "**", "left*.png"), recursive=True)
+        elif "falling_things" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "*.left.jpg"), recursive=True)
+        elif "crestereo" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "*left.jpg"), recursive=True)
+        elif "SIDOD" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "*.left.png"), recursive=True)
+        elif "irs" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "l_*.png"), recursive=True)
+        elif "sceneflow" in args.img:
+            left_image_paths = glob.glob(os.path.join(args.img, "**", "left", "*.png"), recursive=True)
         else:
             left_image_paths = glob.glob(os.path.join(args.img, "**", "*.png"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
             # left_image_paths =   glob.glob(os.path.join(args.img, "**","left","*.png"), recursive=True) #+ glob.glob(os.path.join(args.img, "**", "left","*_1.jpg"), recursive=True) + glob.glob(os.path.join(args.img, "**", "*.bmp"), recursive=True)
         # 排除包含/labels/ 和 right 的图片
         left_image_paths = [path for path in left_image_paths if (("/labels/" not in path) and ("right" not in path))]
             
+        if args.shuffle:
+            import random
+            # random.seed()
+            random.shuffle(left_image_paths)
     for left_image_path in tqdm(left_image_paths):
         infer_image(model, left_image_path, args)
 

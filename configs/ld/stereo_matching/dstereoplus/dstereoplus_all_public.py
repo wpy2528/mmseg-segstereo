@@ -2,6 +2,7 @@
 NUM_CLASSES = 4
 TEST_RESIZE_WH = (960, 544)
 BATCH_PAD_HW = (320, 768)
+BATCH_PAD_WH = BATCH_PAD_HW[::-1]
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -130,6 +131,7 @@ model = dict(
 train_pipeline = [
     dict(type='LoadStereoImages', color_type='color'),
     dict(type='LoadStereoMatchingAnnotations'),
+    dict(type='ResizeStereoImages', scale=BATCH_PAD_WH),
     # dict(type='FlowAugmentor'),
     dict(type='PackStereoMatchingInputs')
 ]
@@ -187,22 +189,30 @@ train_datasets = [
     ),
     dict(
         type="FallingThingsDataset",
-        data_root='/SDB-8T/depth_open_source_dataset/falling_things',
+        data_root='/data_SSD2/falling_things',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
     dict(
         type="CrestereoHoleDataset",
-        data_root='/data_SSD2/crestereo',
+        data_root='/data_SSD2/crestereo_dataset',
+        # ann_file = 'ann.txt',
         num_classes=NUM_CLASSES,
         pipeline=train_pipeline,
         test_mode=False
     ),
+    # dict(
+    #     type="IRSStereoDataset",
+    #     data_root='/SDB-8T/depth_open_source_dataset/irs',
+    #     num_classes=NUM_CLASSES,
+    #     pipeline=train_pipeline,
+    #     test_mode=False
+    # )
 ]
 
 train_dataloader = dict(
-    batch_size=8,
+    batch_size=14,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -214,7 +224,7 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    batch_size=8,
+    batch_size=14,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=False),
