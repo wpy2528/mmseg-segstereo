@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from mmengine.dist import is_main_process
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger, print_log
@@ -83,9 +84,16 @@ class IoUMetric(BaseMetric):
             if not self.format_only:
                 label = data_sample['gt_sem_seg']['data'].squeeze().to(
                     pred_label)
+                img_path = getattr(data_sample, 'img_path', None)
+                if img_path is None and getattr(
+                        data_sample, 'metainfo', None) is not None:
+                    img_path = data_sample.metainfo.get('left_img_path', '')
+                if img_path is None:
+                    img_path = ''
                 self.results.append(
                     self.intersect_and_union(pred_label, label, num_classes,
-                                             self.ignore_index) + (data_sample['img_path'],)) # [4, num_classes] for I U Pred GT
+                                             self.ignore_index) +
+                    (img_path,))  # [4, num_classes] for I U Pred GT
             # format_result
             if False and self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
@@ -209,6 +217,11 @@ class IoUMetric(BaseMetric):
             torch.Tensor: The prediction histogram on all classes.
             torch.Tensor: The ground truth histogram on all classes.
         """
+        if pred_label.shape != label.shape:
+            pred_label = F.interpolate(
+                pred_label.unsqueeze(0).unsqueeze(0).float(),
+                size=label.shape,
+                mode='nearest').squeeze().long()
 
         mask = (label != ignore_index)
         pred_label = pred_label[mask]

@@ -2,6 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+def _autocast_cuda_disabled():
+    try:
+        return torch.amp.autocast('cuda', enabled=False)
+    except AttributeError:
+        return torch.cuda.amp.autocast(enabled=False)
+
+
 class FlowHead(nn.Module):
     def __init__(self, input_dim=128, hidden_dim=256, output_dim=2):
         super(FlowHead, self).__init__()
@@ -103,7 +111,7 @@ def interp(x, dest):
     original_dtype = x.dtype
     x_fp32 = x.float()
     interp_args = {'mode': 'bilinear', 'align_corners': True}
-    with torch.cuda.amp.autocast(enabled=False):
+    with _autocast_cuda_disabled():
         output_fp32 = F.interpolate(x_fp32, dest.shape[2:], **interp_args)
     if original_dtype != torch.float32:
         output = output_fp32.to(original_dtype)

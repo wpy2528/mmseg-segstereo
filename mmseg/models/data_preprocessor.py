@@ -110,12 +110,32 @@ class SegDataPreProcessor(BaseDataPreprocessor):
         inputs = data['inputs']
         data_samples = data.get('data_samples', None)
         # TODO: whether normalize should be after stack_batch
-        if self.channel_conversion and inputs[0].size(0) == 3:
-            inputs = [_input[[2, 1, 0], ...] for _input in inputs]
+        if self.channel_conversion:
+            conv = []
+            for _input in inputs:
+                if _input.size(0) == 3:
+                    conv.append(_input[[2, 1, 0], ...])
+                elif _input.size(0) == 6:
+                    conv.append(
+                        torch.cat(
+                            [_input[[2, 1, 0], ...], _input[[5, 4, 3], ...]],
+                            dim=0))
+                else:
+                    conv.append(_input)
+            inputs = conv
 
         inputs = [_input.float() for _input in inputs]
         if self._enable_normalize:
-            inputs = [(_input - self.mean) / self.std for _input in inputs]
+            normalized = []
+            for _input in inputs:
+                # 6 通道 [左 RGB | 右 RGB]：左右共用同一组 mean/std（各 3 通道）
+                if _input.size(0) == 6:
+                    left = (_input[:3] - self.mean) / self.std
+                    right = (_input[3:6] - self.mean) / self.std
+                    normalized.append(torch.cat([left, right], dim=0))
+                else:
+                    normalized.append((_input - self.mean) / self.std)
+            inputs = normalized
 
         if training:
             assert data_samples is not None, ('During training, ',

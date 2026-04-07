@@ -13,3 +13,14 @@ __all__ = [
     'VISBACKENDS', 'VISUALIZERS', 'RUNNERS', 'RUNNER_CONSTRUCTORS', 'LOOPS',
     'EVALUATOR', 'LOG_PROCESSORS', 'OPTIM_WRAPPERS', 'INFERENCERS'
 ]
+
+import importlib
+
+# Eager-import hook modules so @HOOKS.register_module() runs before Runner
+# builds default_hooks (lazy mmseg.engine.hooks.__init__ would skip these).
+for _hook_mod in (
+        'mmseg.engine.hooks.session_checkpoint_hook',
+        'mmseg.engine.hooks.segstereo_semantic_fuse_hook',
+        'mmseg.engine.hooks.visualization_hook',
+):
+    importlib.import_module(_hook_mod)

@@ -47,6 +47,12 @@ def init_model(config: Union[str, Path, Config],
     if config.model.type == 'EncoderDecoder':
         if 'init_cfg' in config.model.backbone:
             config.model.backbone.init_cfg = None
+    elif config.model.type == 'SegStereo':
+        bb = config.model.backbone
+        if isinstance(bb, dict) and 'backbone_cfg' in bb:
+            bcfg = bb['backbone_cfg']
+            if isinstance(bcfg, dict) and 'init_cfg' in bcfg:
+                bcfg['init_cfg'] = None
     elif config.model.type == 'MultimodalEncoderDecoder':
         for k, v in config.model.items():
             if isinstance(v, dict) and 'init_cfg' in v:

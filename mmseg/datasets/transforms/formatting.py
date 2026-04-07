@@ -219,3 +219,92 @@ class PackStereoMatchingInputs(BaseTransform):
         repr_str = self.__class__.__name__
         repr_str += f'(meta_keys={self.meta_keys})'
         return repr_str
+
+
+@TRANSFORMS.register_module()
+class PackSegStereoInputs(BaseTransform):
+    """打包 SegStereo 联合训练所需数据：6 通道输入 + ``gt_sem_seg`` + ``gt_disp``。
+
+    需在 pipeline 中先加载 ``left_img``、``right_img``、``gt_seg_map``、``left_disp`` 等，
+    与 ``LoadStereoImages`` / ``LoadAnnotations`` / ``LoadStereoMatchingAnnotations`` 等组合使用。
+
+    - ``inputs``：左右图在通道维拼接为 6 通道 ``(6, H, W)``。
+    - ``data_samples``：``SegDataSample``，含 ``gt_sem_seg``；若存在 ``left_disp`` 则写入 ``gt_disp``。
+    """
+
+    def __init__(self,
+                 meta_keys=('left_img_path', 'right_img_path', 'seg_map_path',
+                            'left_disp_path', 'disp_map_path', 'ori_shape',
+                            'img_shape', 'pad_shape', 'scale_factor', 'flip',
+                            'flip_direction', 'reduce_zero_label')):
+        self.meta_keys = meta_keys
+
+    def transform(self, results: dict) -> dict:
+        packed_results = dict()
+        assert 'img' not in results, '执行打包前 results 中不应含 img'
+        left_img = results['left_img']
+        right_img = results['right_img']
+        if len(left_img.shape) == 3:
+            results['img'] = np.concatenate([left_img, right_img], axis=2)
+        elif len(left_img.shape) == 2:
+            results['img'] = np.concatenate(
+                [left_img[..., np.newaxis], right_img[..., np.newaxis]], axis=2)
+        else:
+            raise ValueError(
+                f'left_img/right_img 形状非法: {left_img.shape}, {right_img.shape}')
+        del results['left_img']
+        del results['right_img']
+
+        img = results['img']
+        if len(img.shape) < 3:
+            img = np.expand_dims(img, -1)
+        if not img.flags.c_contiguous:
+            img = to_tensor(np.ascontiguousarray(img.transpose(2, 0, 1)))
+        else:
+            img = img.transpose(2, 0, 1)
+            img = to_tensor(img).contiguous()
+        packed_results['inputs'] = img
+
+        data_sample = SegDataSample()
+        if 'gt_seg_map' in results:
+            if len(results['gt_seg_map'].shape) == 2:
+                data = to_tensor(results['gt_seg_map'][None,
+                                                       ...].astype(np.int64))
+            else:
+                warnings.warn(
+                    '语义分割图通常为 2D，当前为 '
+                    f'{results["gt_seg_map"].shape}')
+                if len(results['gt_seg_map'].shape) == 3:
+                    data = to_tensor(
+                        results['gt_seg_map'].transpose(2, 0,
+                                                        1).astype(np.int64))
+                else:
+                    raise ValueError(f'不支持的 gt_seg_map 形状: '
+                                     f'{results["gt_seg_map"].shape}')
+            data_sample.gt_sem_seg = PixelData(data=data)
+
+        if 'left_disp' in results:
+            if len(results['left_disp'].shape) == 2:
+                disp_t = to_tensor(results['left_disp'][None, ...].astype(
+                    np.float32))
+            else:
+                disp_t = to_tensor(results['left_disp'][None, ...])
+            data_sample.gt_disp = PixelData(data=disp_t)
+
+        if 'disp_mask' in results:
+            m = to_tensor(results['disp_mask'][None, ...].astype(np.int64))
+            data_sample.set_data(dict(disp_mask=PixelData(data=m)))
+
+        img_meta = {}
+        for key in self.meta_keys:
+            if key in results:
+                img_meta[key] = results[key]
+        data_sample.set_metainfo(img_meta)
+        packed_results['data_samples'] = data_sample
+
+        return packed_results
+
+    def __repr__(self) -> str:
+        repr_str = self.__class__.__name__
+        repr_str += f'(meta_keys={self.meta_keys})'
+        return repr_str

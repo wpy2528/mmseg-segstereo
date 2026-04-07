@@ -42,6 +42,7 @@ from .transforms import (CLAHE, AdjustGamma, Albu, BioMedical3DPad,
                          CREStereoAugmentor, FlowAugmentor, SparseFlowAugmentor, ResizeStereoImages)
 from .voc import PascalVOCDataset
 from .ld_perception_seg_dataset import LDPerceptionSegDataset
+from .ld_perception_stereo_seg_dataset import LDPerceptionStereoSegDataset
 from .ld_perception_pretrain_dataset import LDPerceptionPretrainDataset
 from .samplers import FrontAndSideImageBatchSampler
 from .ld_perception_stereo_matching_dataset import LDPerceptionStereoMatchingDataset
@@ -69,7 +70,7 @@ __all__ = [
     'ConcatCDInput', 'BaseCDDataset', 'DSDLSegDataset', 'BDD100KDataset',
     'NYUDataset', 'HSIDrive20Dataset',
     
-    'LDPerceptionSegDataset',
+    'LDPerceptionSegDataset', 'LDPerceptionStereoSegDataset',
     'LDPerceptionPretrainDataset',
     'FrontAndSideImageBatchSampler',
     'LDPerceptionStereoMatchingDataset',

@@ -2535,3 +2535,25 @@ class RandomDepthMix(BaseTransform):
 
         results['img'] = img
         return results
+
+
+@TRANSFORMS.register_module()
+class RemapSegLabels(BaseTransform):
+    """将 ``gt_seg_map`` 的原始像素值映射为 ``[0, num_classes-1]`` 或 ``ignore_label``。
+
+    用于标注文件使用任意 ID（如 1/50/200）而模型使用连续类下标时的预处理。
+    """
+
+    def __init__(self, mapping: dict, ignore_label: int = 255) -> None:
+        self.mapping = {int(k): int(v) for k, v in mapping.items()}
+        self.ignore_label = int(ignore_label)
+
+    def transform(self, results: dict) -> dict:
+        if 'gt_seg_map' not in results or results['gt_seg_map'] is None:
+            return results
+        m = results['gt_seg_map']
+        out = np.full(m.shape, self.ignore_label, dtype=np.uint8)
+        for old, new in self.mapping.items():
+            out[m == old] = new
+        results['gt_seg_map'] = out
+        return results

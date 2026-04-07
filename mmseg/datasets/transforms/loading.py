@@ -204,7 +204,7 @@ class LoadStereoMatchingAnnotations(MMCV_LoadAnnotations):
         results['seg_fields'].append('left_disp')
 
         # 加载有效区域mask
-        if results['mask_path'] is not None:
+        if results.get('mask_path') is not None:
             mask_np = cv2.imread(results['mask_path'], cv2.IMREAD_GRAYSCALE)
             mask_np[mask_np != 255] = 0
             results['disp_mask'] = mask_np

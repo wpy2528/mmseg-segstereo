@@ -30,6 +30,9 @@ from .yolov5ds_backbone import Yolov5DSBackbone
 from .bgnet import BGNet_Plus
 from .igevpp_rt import IGEVStereo
 
+from .segstereo import (SegStereoDisparityBranch, SegStereoIGEVDisparityBranch,
+                        SegStereoPSPNet50Backbone)
+
 __all__ = [
     'ResNet', 'ResNetV1c', 'ResNetV1d', 'ResNeXt', 'HRNet', 'FastSCNN',
     'ResNeSt', 'MobileNetV2', 'UNet', 'CGNet', 'MobileNetV3',
@@ -40,5 +43,8 @@ __all__ = [
     
     'Yolov5DSBackbone',
     'BGNet_Plus',
-    'IGEVStereo'
+    'IGEVStereo',
+
+    'SegStereoPSPNet50Backbone', 'SegStereoDisparityBranch',
+    'SegStereoIGEVDisparityBranch',
 ]

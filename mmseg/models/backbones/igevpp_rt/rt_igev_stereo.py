@@ -9,15 +9,31 @@ from .submodule import build_gwc_volume_no_scatternd
 from mmseg.registry import MODELS
 
 try:
-    autocast = torch.cuda.amp.autocast
-except:
-    class autocast:
-        def __init__(self, enabled):
-            pass
-        def __enter__(self):
-            pass
-        def __exit__(self, *args):
-            pass
+    _amp_autocast = torch.amp.autocast  # PyTorch 2.x; avoids cuda.amp deprecation warning
+except AttributeError:
+    _amp_autocast = None
+
+if _amp_autocast is not None:
+
+    def autocast(enabled=True, dtype=torch.float16):
+        return _amp_autocast('cuda', enabled=enabled, dtype=dtype)
+
+else:
+    try:
+        autocast = torch.cuda.amp.autocast
+    except AttributeError:
+
+        class autocast:
+            """No-op when AMP is unavailable."""
+
+            def __init__(self, enabled=True, dtype=None):
+                pass
+
+            def __enter__(self):
+                pass
+
+            def __exit__(self, *args):
+                pass
 
 class hourglass(nn.Module):
     def __init__(self, in_channels):
@@ -106,7 +122,11 @@ class IGEVStereo(nn.Module):
         parser.add_argument('--lr', type=float, default=0.0002, help="max learning rate.")
         parser.add_argument('--num_steps', type=int, default=200000, help="length of training schedule.")
         parser.add_argument('--image_size', type=int, nargs='+', default=[320, 768], help="size of the random image crops used during training.")
-        parser.add_argument('--gru_iters', type=int, default=0, help="number of updates to the disparity field in each forward pass.")
+        parser.add_argument(
+            '--gru_iters',
+            type=int,
+            default=4,
+            help='number of GRU refinement updates per forward (0 = init disp + spx upsample only)')
         parser.add_argument('--wdecay', type=float, default=.00001, help="Weight decay in optimizer.")
 
         # Validation parameters
@@ -175,12 +195,12 @@ class IGEVStereo(nn.Module):
                 m.eval()
 
     def upsample_disp(self, disp, mask_feat_4, stem_2x):
-        raise NotImplementedError
+        """1/4 分辨率视差 + GRU 分支的 mask 特征 → 全分辨率（与 init 路径的 spx 并行一套 head）。"""
         with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
-            xspx = self.spx_2_gru(mask_feat_4, stem_2x) # 这里和gru没鸟关系
-            spx_pred = self.spx_gru(xspx) # 放大一倍
-            spx_pred = F.softmax(spx_pred, 1)
-            up_disp = context_upsample(disp*4., spx_pred)
+            xspx = self.spx_2_gru(mask_feat_4, stem_2x)
+            spx_pred = self.spx_gru(xspx)
+            spx_pred = F.softmax(spx_pred, dim=1)
+            up_disp = context_upsample(disp * 4.0, spx_pred.float())
         return up_disp
 
     
@@ -188,11 +208,43 @@ class IGEVStereo(nn.Module):
         image1, image2 = inputs.split(3, dim=1)
         return self.forward_inner((image1, image2))
 
-    def forward_inner(self, inputs, iters=0, flow_init=None, test_mode=False):
-        """ Estimate disparity between pair of frames """
+    def forward_inner(self,
+                      inputs,
+                      iters=None,
+                      flow_init=None,
+                      test_mode=False,
+                      left_semantic=None,
+                      sem_proj=None,
+                      align_corners=False,
+                      fuse_level_match: bool = True,
+                      fuse_level_hg8: bool = True,
+                      fuse_level_hg16: bool = True,
+                      stdc_feat_hg8=None,
+                      stdc_feat_hg16=None,
+                      sem_add_hg8=None,
+                      sem_add_hg16=None):
+        """Estimate disparity between pair of frames.
+
+        Args:
+            iters: GRU 更新步数；``None`` 时用 ``self.args.gru_iters``。为 0 时仅 init + spx 上采样。
+            left_semantic: 可选，左视语义 logits ``(B, C, H, W)``，空间尺寸建议已与输入左图对齐
+                （含 pad）。与 ``sem_proj`` 同时给出时，在 ``match`` 特征上拼接投影后的语义
+                （与 SegStereo 代价体分支融合方式一致；通道总数须能被 GWC 的 ``num_groups`` 整除）。
+            sem_proj: 将 ``left_semantic`` 投影到 ``fused_channels`` 的 ``nn.Module``（如 1x1 Conv+BN）。
+            align_corners: 将语义双线性缩放到 ``match`` 分辨率时的 ``align_corners``。
+            fuse_level_match: 是否在 ``match`` 上拼接分割 logits。
+            fuse_level_hg8 / fuse_level_hg16: 是否将 STDC 特征以残差形式注入 ``features_left[1]`` / ``[2]``。
+            stdc_feat_hg8 / stdc_feat_hg16: STDC 多尺度特征，空间尺寸任意，内部双线性对齐到 IGEV 金字塔。
+            sem_add_hg8 / sem_add_hg16: ``Conv+BN``，将 STDC 通道数映射到 IGEV ``features[1]``（64）/ ``[2]``（192）。
+        """
         image1, image2 = inputs
         assert image1.shape[2] % 32 == 0
         assert image1.shape[3] % 32 == 0
+        if iters is None:
+            iters = int(self.args.gru_iters)
+        hd = self.args.hidden_dim
+        if isinstance(hd, (list, tuple)):
+            hd = int(hd[0])
 
         with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
             features_left = self.feature(image1)
@@ -204,8 +256,36 @@ class IGEVStereo(nn.Module):
             features_left[0] = torch.cat((features_left[0], stem_4x), 1)
             features_right[0] = torch.cat((features_right[0], stem_4y), 1)
 
+            # STDC → IGEV 金字塔残差（仅左塔；与 hourglass 内 FeatureAtt 通道一致）
+            if fuse_level_hg8 and stdc_feat_hg8 is not None and sem_add_hg8 is not None:
+                s8 = F.interpolate(
+                    stdc_feat_hg8,
+                    size=features_left[1].shape[2:],
+                    mode='bilinear',
+                    align_corners=align_corners)
+                features_left[1] = features_left[1] + sem_add_hg8(s8)
+            if fuse_level_hg16 and stdc_feat_hg16 is not None and sem_add_hg16 is not None:
+                s16 = F.interpolate(
+                    stdc_feat_hg16,
+                    size=features_left[2].shape[2:],
+                    mode='bilinear',
+                    align_corners=align_corners)
+                features_left[2] = features_left[2] + sem_add_hg16(s16)
+
             match_left = self.desc(self.conv(features_left[0]))
             match_right = self.desc(self.conv(features_right[0]))
+            if fuse_level_match and left_semantic is not None:
+                if sem_proj is None:
+                    raise ValueError(
+                        'forward_inner: left_semantic 需与 sem_proj 同时传入')
+                sem = F.interpolate(
+                    left_semantic,
+                    size=match_left.shape[2:],
+                    mode='bilinear',
+                    align_corners=align_corners)
+                sem = sem_proj(sem)
+                match_left = torch.cat([match_left, sem], dim=1)
+                match_right = torch.cat([match_right, sem], dim=1)
             # gwc_volume = build_gwc_volume(match_left, match_right, self.args.max_disp//4, 8)
             gwc_volume = build_gwc_volume_no_scatternd(match_left, match_right, self.args.max_disp//4, 8)
             geo_encoding_volume = self.cost_agg(gwc_volume, features_left)
@@ -216,40 +296,39 @@ class IGEVStereo(nn.Module):
             
             del prob, gwc_volume
 
-            if not test_mode:
+            spx_pred = None
+            if iters == 0:
                 xspx = self.spx_4(features_left[0])
                 xspx = self.spx_2(xspx, stem_2x)
-                spx_pred = self.spx(xspx)
-                spx_pred = F.softmax(spx_pred, 1)
+                spx_pred = F.softmax(self.spx(xspx), dim=1)
 
             hidden = self.hnet(features_left[0])
             net = torch.tanh(hidden)
             context = self.cnet(features_left[0])
-            context = list(self.context_zqr_conv(context).split(split_size=self.args.hidden_dim, dim=1))
-
+            context = list(self.context_zqr_conv(context).split(hd, dim=1))
 
         geo_block = Geo_Encoding_Volume
-        geo_fn = geo_block(geo_encoding_volume.float(), radius=self.args.corr_radius, num_levels=self.args.corr_levels)
-        b, c, h, w = match_left.shape
+        geo_fn = geo_block(
+            geo_encoding_volume.float(),
+            radius=self.args.corr_radius,
+            num_levels=self.args.corr_levels)
         disp = init_disp
-        disp_preds = []
+        disp_up = None
 
-        # # GRUs iterations to update disparity
-        # for itr in range(iters):
-        #     disp = disp.detach()
-        #     geo_feat = geo_fn(disp)
-        #     with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
-        #         net, mask_feat_4, delta_disp = self.update_block(net, context, geo_feat, disp)
-        #     disp = disp + delta_disp
-        #     if test_mode and itr < iters-1:
-        #         continue
+        if iters > 0:
+            for itr in range(iters):
+                disp = disp.detach()
+                geo_feat = geo_fn(disp)
+                with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
+                    net, mask_feat_4, delta_disp = self.update_block(
+                        net, context, geo_feat, disp)
+                disp = disp + delta_disp
+                if test_mode and itr < iters - 1:
+                    continue
+                disp_up = self.upsample_disp(disp, mask_feat_4, stem_2x)
+            if disp_up is None:
+                raise RuntimeError('gru_iters>0 but disp_up was not computed')
+            return disp_up
 
-        #     # upsample predictions
-        #     disp_up = self.upsample_disp(disp, mask_feat_4, stem_2x)
-        #     disp_preds.append(disp_up)
-
-        # if test_mode:
-        #     return disp_up
-
-        init_disp = context_upsample(init_disp*4., spx_pred.float())
-        return init_disp# , disp_preds
+        assert spx_pred is not None
+        return context_upsample(init_disp * 4.0, spx_pred.float())

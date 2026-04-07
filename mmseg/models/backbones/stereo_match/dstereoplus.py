@@ -8,18 +8,17 @@ from .stereoplus.extractor import Feature
 from .stereoplus.submodule import *
 import logging
 import math
+import os
 from mmseg.registry import MODELS
 logger = logging.getLogger(__name__)
 
 __all__ = ["DStereoPlus"]
 
-ONNX_EXPORT_MERGE_DISP_AND_WEIGHT = input("是否合并disp和weight? (y/n): ") == "y"
-if ONNX_EXPORT_MERGE_DISP_AND_WEIGHT:
-    print("合并disp和weight")
-else:
-    print("不合并disp和weight")
-import time
-time.sleep(1)
+# ONNX 导出选项；勿在 import 时使用 input()，否则会阻塞训练。需要合并时设环境变量 MMSEG_ONNX_MERGE_DISP_WEIGHT=1
+_ONNX_MERGE = os.environ.get('MMSEG_ONNX_MERGE_DISP_WEIGHT', '0').lower() in ('1', 'true', 'y', 'yes')
+ONNX_EXPORT_MERGE_DISP_AND_WEIGHT = _ONNX_MERGE
+if _ONNX_MERGE:
+    logger.debug('ONNX export: merge disp and weight')
 
 # try:
 #     autocast = torch.cuda.amp.autocast
