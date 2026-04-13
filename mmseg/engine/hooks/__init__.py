@@ -5,6 +5,7 @@ __all__ = [
     'SegVisualizationHook',
     'SegStereoSemanticFuseHook',
     'SessionCheckpointHook',
+    'ValPredictionSaveHook',
 ]
 
 
@@ -13,6 +14,10 @@ def __getattr__(name):
         from .visualization_hook import SegVisualizationHook
 
         return SegVisualizationHook
+    if name == 'ValPredictionSaveHook':
+        from .val_prediction_save_hook import ValPredictionSaveHook
+
+        return ValPredictionSaveHook
     if name == 'SegStereoSemanticFuseHook':
         from .segstereo_semantic_fuse_hook import SegStereoSemanticFuseHook
 

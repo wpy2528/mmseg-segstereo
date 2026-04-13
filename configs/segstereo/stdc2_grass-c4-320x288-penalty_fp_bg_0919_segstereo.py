@@ -1,4 +1,4 @@
-# 由 configs/ld/grass/stdc2_grass-c4-320x272-penalty_fp_bg_0919_concat.py 改写：
+# 由 configs/ld/grass/stdc2_grass-c4-320x288-penalty_fp_bg_0919_concat.py 改写：
 # - 语义分支为 STDC2 + FCN / 辅助头（与 concat 版一致），不再使用 PSPNet/ResNet50。
 # - 模型类型为 SegStereo：在上述语义分支外增加 SegStereoIGEVDisparityBranch。
 #
@@ -14,8 +14,8 @@ DATA_ROOT_VAL = '/data_SSD2/datasets/segstereo_val'
 # ===== Global Constants =====
 CLASS_NAMES = ("background", "grass", "soil", "animal")
 NUM_CLASSES = len(CLASS_NAMES)
-RESIZE_WH = (320, 272)
-BATCH_PAD_HW = (272, 320)
+RESIZE_WH = (320, 288)
+BATCH_PAD_HW = (288, 320)
 
 norm_cfg = dict(type='BN', requires_grad=True)
 
@@ -147,7 +147,8 @@ model = dict(
 # ===== Dataset / Dataloader（双目 pipeline；数据字段需与之一致）=====
 dataset_type = 'LDPerceptionStereoSegDataset'
 
-# 双目阶段仅有 left_img/right_img，无 img：须用 ResizeStereoImages（同步左右图、语义、视差；视差数值按水平缩放）
+# 双目阶段仅有 left_img/right_img，无 img：须用 ResizeStereoImages（同步左右图、语义图、视差；视差数值按水平缩放）
+# 勿用 mmcv/mmseg 的 Resize（依赖 results['img']，且视差在 seg_fields 中仅几何缩放、未乘 w_scale）
 train_pipeline = [
     dict(type='LoadStereoImages', color_type='color', imdecode_backend='cv2'),
     dict(type='LoadAnnotations'),

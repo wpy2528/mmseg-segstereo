@@ -150,6 +150,30 @@ class ResizeStereoImages(BaseTransform):
             w_scale = results['scale_factor'][0]
             results['left_disp'] = left_disp * w_scale # 视差放缩
 
+    def _resize_seg_fields(self, results: dict) -> None:
+        """Resize ``seg_fields`` to ``results['scale']`` (nearest).
+
+        ``left_disp`` is skipped: it is resized and value-scaled in
+        :meth:`_resize_disp` to match stereo conventions.
+        """
+        for seg_key in results.get('seg_fields', []):
+            if seg_key == 'left_disp':
+                continue
+            if results.get(seg_key, None) is None:
+                continue
+            if self.keep_ratio:
+                results[seg_key] = mmcv.imrescale(
+                    results[seg_key],
+                    results['scale'],
+                    interpolation='nearest',
+                    backend=self.backend)
+            else:
+                results[seg_key] = mmcv.imresize(
+                    results[seg_key],
+                    results['scale'],
+                    interpolation='nearest',
+                    backend=self.backend)
+
     def transform(self, results: dict) -> dict:
         """Transform function to resize images, bounding boxes, semantic
         segmentation map and keypoints.
@@ -169,6 +193,7 @@ class ResizeStereoImages(BaseTransform):
             results['scale'] = _scale_size(img_shape[::-1],
                                            self.scale_factor)  # type: ignore
         self._resize_img(results)
+        self._resize_seg_fields(results)
         self._resize_disp(results)
         return results
 
