@@ -128,6 +128,9 @@ class SegStereoIGEVDisparityBranch(BaseModule):
                 stdc_feat_hg8: torch.Tensor = None,
                 stdc_feat_hg16: torch.Tensor = None):
         if self.semantic_channels > 0:
+            if left_semantic is not None:
+                while left_semantic.dim() > 4 and left_semantic.shape[1] == 1:
+                    left_semantic = left_semantic.squeeze(1)
             if left_semantic is not None and left_semantic.shape[
                     1] != self.semantic_channels:
                 raise ValueError(

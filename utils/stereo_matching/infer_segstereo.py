@@ -4,7 +4,7 @@
 经 ``model.test_step`` → ``SegDataPreProcessor``，与训练时 val 路径一致（6 通道 BGR 0～255 再按 config 做
 ``bgr_to_rgb`` 与 ``(x-mean)/std``）。**必须**提供 ``--config`` 与 checkpoint。
 
-ONNX 推理请使用 ``infer_onnx_segstereo.py``（手写 resize+归一化，需与 config 对齐）。
+ONNX 推理请使用 ``infer_onnx_segstereo.py``（``--config`` + ``mmcv`` resize 与训练 ``ResizeStereoImages`` / ``data_preprocessor`` 对齐）。
 
 用法示例::
 

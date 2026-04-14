@@ -6,6 +6,10 @@
   - 均为目录：按**同名文件名**配对（默认仅当前目录；``--recursive`` 时按相对路径镜像配对）。
 
 默认仅保存一张横向拼接图：``<stem>_vis.png``（原图 | 分割彩图 | 分割叠加 | 视差灰度 | 视差 JET，高度对齐原图）。可选 ``--save-disp-npy`` 额外写 ``<stem>_disp.npy``。
+
+**与训练对齐**：双图缩放使用与 ``ResizeStereoImages`` 相同的 ``mmcv.imresize``（``bilinear`` + ``backend='cv2'``）；
+默认 ``mean/std/bgr_to_rgb`` 与 grass SegStereo 配置一致（``0/255`` + ``bgr_to_rgb=True``）。
+推荐传入 ``--config <训练.py>`` 自动读取 ``data_preprocessor``；勿再使用 ImageNet 默认均值。
 """
 
 import argparse
@@ -30,6 +34,29 @@ def _parse_float_list(s: str, n: int) -> list:
     return parts
 
 
+def infer_default_resize_backend() -> str:
+    try:
+        import mmcv  # noqa: F401
+        return 'mmcv'
+    except Exception:
+        return 'cv2'
+
+
+def _resize_bgr_hwc(
+        img_bgr: np.ndarray,
+        h: int,
+        w: int,
+        resize_backend: str,
+) -> np.ndarray:
+    """与 ``ResizeStereoImages``（``keep_ratio=False``）一致：双线性 + backend cv2。"""
+    if resize_backend == 'mmcv':
+        import mmcv
+
+        return mmcv.imresize(
+            img_bgr, (w, h), interpolation='bilinear', backend='cv2')
+    return cv2.resize(img_bgr, (w, h), interpolation=cv2.INTER_LINEAR)
+
+
 def preprocess_pair(
     left_bgr: np.ndarray,
     right_bgr: np.ndarray,
@@ -38,13 +65,14 @@ def preprocess_pair(
     mean: np.ndarray,
     std: np.ndarray,
     bgr_to_rgb: bool,
+    resize_backend: str = 'mmcv',
 ) -> tuple:
-    """返回 (input_6ch_nchw, left_bgr_resized) 供可视化对齐。"""
-    left = cv2.resize(left_bgr, (out_w, out_h))
-    right = cv2.resize(right_bgr, (out_w, out_h))
+    """返回 (input_6ch_nchw, left_rgb_or_bgr_float_hwc) 供可视化；左支与训练同序：resize→(可选)RGB→归一化。"""
+    left = _resize_bgr_hwc(left_bgr, out_h, out_w, resize_backend)
+    right = _resize_bgr_hwc(right_bgr, out_h, out_w, resize_backend)
     if bgr_to_rgb:
-        left = cv2.cvtColor(left, cv2.COLOR_BGR2RGB)
-        right = cv2.cvtColor(right, cv2.COLOR_BGR2RGB)
+        left = cv2.cvtColor(left.astype(np.uint8), cv2.COLOR_BGR2RGB)
+        right = cv2.cvtColor(right.astype(np.uint8), cv2.COLOR_BGR2RGB)
     left = left.astype(np.float32)
     right = right.astype(np.float32)
     left_t = np.transpose(left, (2, 0, 1))[np.newaxis, ...]
@@ -55,6 +83,25 @@ def preprocess_pair(
     right_n = (right_t - mean) / std
     x6 = np.concatenate([left_n, right_n], axis=1)
     return x6.astype(np.float32), left
+
+
+def _load_data_preprocessor_from_config(config_path: str):
+    """返回 (mean, std, bgr_to_rgb, (h, w) or (None, None))。"""
+    from mmengine.config import Config
+
+    cfg = Config.fromfile(config_path)
+    dp = cfg.model.get('data_preprocessor', {})
+    if not dp:
+        raise ValueError(f'{config_path!r} 中无 model.data_preprocessor')
+    mean = np.asarray(dp['mean'], dtype=np.float32).reshape(3)
+    std = np.asarray(dp['std'], dtype=np.float32).reshape(3)
+    b2r = bool(dp.get('bgr_to_rgb', False))
+    size = dp.get('size', None)
+    if size is not None:
+        hw = (int(size[0]), int(size[1]))
+    else:
+        hw = (None, None)
+    return mean, std, b2r, hw
 
 
 def _static_hw_from_onnx(session: ort.InferenceSession):
@@ -358,7 +405,16 @@ def infer_one_pair(
     if left_bgr is None or right_bgr is None:
         raise FileNotFoundError(f'读取失败: {left_path} / {right_path}')
 
-    x6, _ = preprocess_pair(left_bgr, right_bgr, h, w, mean, std, bgr_to_rgb)
+    x6, _ = preprocess_pair(
+        left_bgr,
+        right_bgr,
+        h,
+        w,
+        mean,
+        std,
+        bgr_to_rgb,
+        resize_backend=getattr(args, 'resize_backend', 'mmcv'),
+    )
     ort_inputs = {}
     if len(inps) == 1:
         ort_inputs[inps[0].name] = x6
@@ -400,16 +456,27 @@ def main():
     parser.add_argument('--input-h', type=int, default=None)
     parser.add_argument('--input-w', type=int, default=None)
     parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help='训练配置 .py：读取 model.data_preprocessor 的 mean/std/bgr_to_rgb/size（推荐，与 val 一致）')
+    parser.add_argument(
         '--mean',
         type=str,
-        default='123.675 116.28 103.53',
-        help='RGB 均值（与训练 data_preprocessor 一致）')
+        default=None,
+        help='RGB 均值；未给且未指定 --config 时用 0 0 0（grass SegStereo 默认）')
     parser.add_argument(
         '--std',
         type=str,
-        default='58.395 57.12 57.375',
-        help='RGB 方差')
+        default=None,
+        help='RGB 方差；未给且未指定 --config 时用 255 255 255')
     parser.add_argument('--no-bgr-to-rgb', action='store_true')
+    parser.add_argument(
+        '--resize-backend',
+        type=str,
+        choices=['cv2', 'mmcv'],
+        default=None,
+        help='与训练 ResizeStereoImages 一致时选 mmcv（默认自动检测）；无 mmcv 时用 cv2')
     parser.add_argument('--swap-outputs', action='store_true')
     parser.add_argument(
         '--device',
@@ -468,9 +535,33 @@ def main():
         print('未找到可推理的左右图对。', file=sys.stderr)
         sys.exit(1)
 
-    mean = np.array(_parse_float_list(args.mean, 3), dtype=np.float32)
-    std = np.array(_parse_float_list(args.std, 3), dtype=np.float32)
-    bgr_to_rgb = not args.no_bgr_to_rgb
+    if args.resize_backend is None:
+        args.resize_backend = infer_default_resize_backend()
+
+    cfg_hw = (None, None)
+    if args.config:
+        mean, std, b2r, cfg_hw = _load_data_preprocessor_from_config(args.config)
+        bgr_to_rgb = b2r and not args.no_bgr_to_rgb
+        if args.mean is not None:
+            mean = np.array(_parse_float_list(args.mean, 3), dtype=np.float32)
+        if args.std is not None:
+            std = np.array(_parse_float_list(args.std, 3), dtype=np.float32)
+        print(
+            f'[config] {args.config}: mean={mean.tolist()} std={std.tolist()} '
+            f'bgr_to_rgb={bgr_to_rgb} data_preprocessor.size={cfg_hw}',
+            file=sys.stderr,
+        )
+    else:
+        ms = args.mean if args.mean is not None else '0 0 0'
+        ss = args.std if args.std is not None else '255 255 255'
+        mean = np.array(_parse_float_list(ms, 3), dtype=np.float32)
+        std = np.array(_parse_float_list(ss, 3), dtype=np.float32)
+        bgr_to_rgb = not args.no_bgr_to_rgb
+        print(
+            f'[preprocess] mean={mean.tolist()} std={std.tolist()} '
+            f'bgr_to_rgb={bgr_to_rgb} resize_backend={args.resize_backend}',
+            file=sys.stderr,
+        )
 
     os.makedirs(args.out_dir, exist_ok=True)
 
@@ -478,11 +569,23 @@ def main():
     inps = session.get_inputs()
     outs = session.get_outputs()
     onnx_h, onnx_w = _static_hw_from_onnx(session)
-    h = args.input_h if args.input_h is not None else onnx_h
-    w = args.input_w if args.input_w is not None else onnx_w
+    ch, cw = cfg_hw
+    h = args.input_h
+    w = args.input_w
+    if h is None:
+        h = onnx_h if onnx_h is not None else ch
+    if w is None:
+        w = onnx_w if onnx_w is not None else cw
     if h is None or w is None:
         raise ValueError(
-            '无法确定输入分辨率：请在 ONNX 中使用静态 H、W，或通过 --input-h / --input-w 指定。')
+            '无法确定 H×W：请使用静态 ONNX 输入、或 --config（data_preprocessor.size）、'
+            '或 --input-h / --input-w。')
+    if args.config and (onnx_h is not None and onnx_w is not None):
+        if (h, w) != (onnx_h, onnx_w):
+            print(
+                f'[warn] 选用输入分辨率 H×W=({h},{w})，与 ONNX 静态 shape ({onnx_h},{onnx_w}) 不一致。',
+                file=sys.stderr,
+            )
 
     pal_rgb = _DEFAULT_SEG_PALETTE_RGB.copy()
     if args.palette:

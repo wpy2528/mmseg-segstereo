@@ -17,6 +17,19 @@ NUM_CLASSES = len(CLASS_NAMES)
 RESIZE_WH = (320, 288)
 BATCH_PAD_HW = (288, 320)
 
+# 验证阶段保存「原图 | 预测叠加」拼图（与 tools/train.py 一致；命令行 --val-pred-vis 会强制开启并覆盖同名项）
+# max_images：单次完整 val 的上限；每个 val_interval 都会再写，目录下会累积多轮文件。
+val_pred_vis = dict(
+    enable=False,
+    out_subdir='val_vis',
+    max_images=10,
+    overlay_alpha=0.5,
+    vis_sep=0,
+)
+
+# 混合精度训练（需 CUDA）：True → AmpOptimWrapper；False → OptimWrapper（全 FP32）
+use_amp = True
+
 norm_cfg = dict(type='BN', requires_grad=True)
 
 data_preprocessor = dict(
@@ -217,7 +230,15 @@ test_evaluator = val_evaluator
 
 # ===== Optimization & Scheduler =====
 optimizer = dict(type='AdamW', lr=0.0005, weight_decay=0.01)
-optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
+if use_amp:
+    optim_wrapper = dict(
+        type='AmpOptimWrapper',
+        optimizer=optimizer,
+        clip_grad=None,
+        loss_scale='dynamic',
+    )
+else:
+    optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
 
 param_scheduler = [
     dict(

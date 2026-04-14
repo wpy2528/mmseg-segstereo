@@ -95,14 +95,23 @@ def _pred_sem_seg_to_numpy(sample: SegDataSample) -> np.ndarray:
 
 @HOOKS.register_module()
 class ValPredictionSaveHook(Hook):
-    """每次 val 最多保存 ``max_images`` 张图。
+    """验证阶段保存「原图 | 叠加预测」拼图。
+
+    **张数上限**：``max_images`` 限制的是 **每一次完整验证**（跑完一遍 val
+    dataloader）内写入的最多张数，**不是**整个训练过程的总数；每个 ``val_interval``
+    都会最多再写 ``max_images`` 张，目录下文件会随 epoch 累积。
+
+    **文件名里的 epoch**：使用 MMEngine 的 ``runner.epoch``（即
+    ``train_loop._epoch``），表示 **已完成训练 epoch 计数**（含 ``--resume``
+    从 checkpoint 恢复后的连续计数），与 checkpoint ``meta['epoch']`` 语义一致，
+    不一定等于「本次启动后从零数起的第几轮」。
 
     布局：**原图（BGR）| 原图与预测语义掩码按权重叠加**（默认 0.5:0.5，同
     ``infer_onnx_segstereo.py`` 的 ``--overlay-alpha 0.5``）。
 
     Args:
         out_subdir (str): 相对 ``runner.work_dir`` 的子目录。
-        max_images (int): 单次验证保存张数上限。
+        max_images (int): **单次验证**保存张数上限（至少为 1）。
         overlay_alpha (float): 彩色掩码权重，原图为 ``1-alpha``（默认 0.5 即 5:5）。
         vis_sep (int): 两列之间白色间隔宽度，0 表示紧贴。
         backend_args (dict, optional): ``fileio.get`` 参数。
@@ -118,18 +127,27 @@ class ValPredictionSaveHook(Hook):
             vis_sep: int = 0,
             backend_args: Optional[dict] = None):
         self.out_subdir = out_subdir
-        self.max_images = int(max_images)
+        self.max_images = max(1, int(max_images))
         self.overlay_alpha = float(overlay_alpha)
         self.vis_sep = int(vis_sep)
         self.backend_args = backend_args.copy() if backend_args else None
         self._saved = 0
         self._out_root = ''
+        self._logged_quota = False
 
-    def before_val(self, runner: Runner) -> None:
+    def _reset_val_state(self, runner: Runner) -> None:
         self._saved = 0
         self._out_root = osp.join(runner.work_dir, self.out_subdir)
+        self._logged_quota = False
         if is_main_process():
             mkdir_or_exist(self._out_root)
+
+    def before_val(self, runner: Runner) -> None:
+        self._reset_val_state(runner)
+
+    def before_val_epoch(self, runner: Runner) -> None:
+        # 与 before_val 一致：部分流程下仅保证 before_val_epoch 被调用时也能重置计数
+        self._reset_val_state(runner)
 
     def _name_prefix(self, runner: Runner) -> str:
         tl = runner.train_loop
@@ -155,7 +173,23 @@ class ValPredictionSaveHook(Hook):
             print_log(str(exc), logger='current', level=logging.WARNING)
             return
 
+        if not self._logged_quota and is_main_process():
+            print_log(
+                f'ValPredictionSaveHook: 本轮验证最多保存 {self.max_images} 张 '
+                f'(runner.epoch={runner.epoch}，为 MMEngine 训练 epoch 计数，含 resume)',
+                logger='current',
+                level=logging.INFO)
+            self._logged_quota = True
+
         prefix = self._name_prefix(runner)
+
+        if not isinstance(outputs, (list, tuple)):
+            print_log(
+                f'ValPredictionSaveHook: 期望 outputs 为 list/tuple 样本序列，收到 '
+                f'{type(outputs)}，跳过',
+                logger='current',
+                level=logging.WARNING)
+            return
 
         for sample in outputs:
             if self._saved >= self.max_images:
@@ -179,9 +213,10 @@ class ValPredictionSaveHook(Hook):
                 [img_bgr, overlay_bgr], max(0, self.vis_sep))
 
             stem = osp.splitext(osp.basename(img_path))[0]
+            # slot：当次验证内第几张（0..max_images-1），勿与 batch_idx 混淆
             out_file = osp.join(
                 self._out_root,
-                f'{prefix}_{self._saved:02d}_{stem}.png',
+                f'{prefix}_slot{self._saved:02d}_{stem}.png',
             )
             mmcv.imwrite(strip, out_file)
             self._saved += 1

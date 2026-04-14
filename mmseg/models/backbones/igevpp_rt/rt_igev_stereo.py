@@ -1,7 +1,8 @@
+import contextlib
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .update import BasicUpdateBlock
+from .update import BasicUpdateBlock, _autocast_cuda_disabled
 from .extractor import Feature
 from .geometry import Geo_Encoding_Volume
 from .submodule import *
@@ -238,6 +239,8 @@ class IGEVStereo(nn.Module):
             sem_add_hg8 / sem_add_hg16: ``Conv+BN``，将 STDC 通道数映射到 IGEV ``features[1]``（64）/ ``[2]``（192）。
         """
         image1, image2 = inputs
+        image1 = image1.float()
+        image2 = image2.float()
         assert image1.shape[2] % 32 == 0
         assert image1.shape[3] % 32 == 0
         if iters is None:
@@ -246,89 +249,137 @@ class IGEVStereo(nn.Module):
         if isinstance(hd, (list, tuple)):
             hd = int(hd[0])
 
-        with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
-            features_left = self.feature(image1)
-            features_right = self.feature(image2)
-            stem_2x = self.stem_2(image1)
-            stem_4x = self.stem_4(stem_2x)
-            stem_2y = self.stem_2(image2)
-            stem_4y = self.stem_4(stem_2y)
-            features_left[0] = torch.cat((features_left[0], stem_4x), 1)
-            features_right[0] = torch.cat((features_right[0], stem_4y), 1)
+        # SegStereo 在 MMEngine AmpOptimWrapper 下整段 loss 处于全局 autocast；decode_head /
+        # backbone 输出常为 FP16。IGEV 在 mixed_precision=False 时在内层使用 autocast(False)，
+        # 若仍传入 FP16 张量会与 FP32 权重冲突（HalfTensor vs FloatTensor）。此处统一升到 FP32，
+        # 并在下方用 _autocast_cuda_disabled 包住整条 IGEV，避免代价体等在「内层已关 autocast、
+        # 外层 AMP 仍开」的缝隙里被半精度化。
+        use_fp32_igev = not self.args.mixed_precision
+        if left_semantic is not None:
+            # (B,1,C,H,W) 等导出/包装产生的多余阶，先压成 (B,C,H,W) 再参与 2D 分支
+            while left_semantic.dim() > 4 and left_semantic.shape[1] == 1:
+                left_semantic = left_semantic.squeeze(1)
+        if use_fp32_igev:
+            if left_semantic is not None:
+                left_semantic = left_semantic.float()
+            if stdc_feat_hg8 is not None:
+                stdc_feat_hg8 = stdc_feat_hg8.float()
+            if stdc_feat_hg16 is not None:
+                stdc_feat_hg16 = stdc_feat_hg16.float()
 
-            # STDC → IGEV 金字塔残差（仅左塔；与 hourglass 内 FeatureAtt 通道一致）
-            if fuse_level_hg8 and stdc_feat_hg8 is not None and sem_add_hg8 is not None:
-                s8 = F.interpolate(
-                    stdc_feat_hg8,
-                    size=features_left[1].shape[2:],
-                    mode='bilinear',
-                    align_corners=align_corners)
-                features_left[1] = features_left[1] + sem_add_hg8(s8)
-            if fuse_level_hg16 and stdc_feat_hg16 is not None and sem_add_hg16 is not None:
-                s16 = F.interpolate(
-                    stdc_feat_hg16,
-                    size=features_left[2].shape[2:],
-                    mode='bilinear',
-                    align_corners=align_corners)
-                features_left[2] = features_left[2] + sem_add_hg16(s16)
+        igev_fp32_guard = (
+            _autocast_cuda_disabled() if use_fp32_igev else contextlib.nullcontext())
 
-            match_left = self.desc(self.conv(features_left[0]))
-            match_right = self.desc(self.conv(features_right[0]))
-            if fuse_level_match and left_semantic is not None:
-                if sem_proj is None:
-                    raise ValueError(
-                        'forward_inner: left_semantic 需与 sem_proj 同时传入')
-                sem = F.interpolate(
-                    left_semantic,
-                    size=match_left.shape[2:],
-                    mode='bilinear',
-                    align_corners=align_corners)
-                sem = sem_proj(sem)
-                match_left = torch.cat([match_left, sem], dim=1)
-                match_right = torch.cat([match_right, sem], dim=1)
-            # gwc_volume = build_gwc_volume(match_left, match_right, self.args.max_disp//4, 8)
-            gwc_volume = build_gwc_volume_no_scatternd(match_left, match_right, self.args.max_disp//4, 8)
-            geo_encoding_volume = self.cost_agg(gwc_volume, features_left)
+        with igev_fp32_guard:
+            with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
+                features_left = self.feature(image1)
+                features_right = self.feature(image2)
+                stem_2x = self.stem_2(image1)
+                stem_4x = self.stem_4(stem_2x)
+                stem_2y = self.stem_2(image2)
+                stem_4y = self.stem_4(stem_2y)
+                features_left[0] = torch.cat((features_left[0], stem_4x), 1)
+                features_right[0] = torch.cat((features_right[0], stem_4y), 1)
 
-            # Init disp from geometry encoding volume
-            prob = F.softmax(self.classifier(geo_encoding_volume).squeeze(1), dim=1)
-            init_disp = disparity_regression(prob, self.args.max_disp//4, 1)
-            
-            del prob, gwc_volume
+                # STDC → IGEV 金字塔残差（仅左塔；与 hourglass 内 FeatureAtt 通道一致）
+                if fuse_level_hg8 and stdc_feat_hg8 is not None and sem_add_hg8 is not None:
+                    s8 = F.interpolate(
+                        stdc_feat_hg8,
+                        size=features_left[1].shape[2:],
+                        mode='bilinear',
+                        align_corners=align_corners)
+                    features_left[1] = features_left[1] + sem_add_hg8(s8)
+                if fuse_level_hg16 and stdc_feat_hg16 is not None and sem_add_hg16 is not None:
+                    s16 = F.interpolate(
+                        stdc_feat_hg16,
+                        size=features_left[2].shape[2:],
+                        mode='bilinear',
+                        align_corners=align_corners)
+                    features_left[2] = features_left[2] + sem_add_hg16(s16)
 
-            spx_pred = None
-            if iters == 0:
-                xspx = self.spx_4(features_left[0])
-                xspx = self.spx_2(xspx, stem_2x)
-                spx_pred = F.softmax(self.spx(xspx), dim=1)
+                match_left = self.desc(self.conv(features_left[0]))
+                match_right = self.desc(self.conv(features_right[0]))
+                if fuse_level_match and left_semantic is not None:
+                    if sem_proj is None:
+                        raise ValueError(
+                            'forward_inner: left_semantic 需与 sem_proj 同时传入')
+                    sem = F.interpolate(
+                        left_semantic,
+                        size=match_left.shape[2:],
+                        mode='bilinear',
+                        align_corners=align_corners)
+                    sem = sem_proj(sem)
+                    # 与在 (B,C,H,W) 上沿通道 cat 等价；中间在 (B,C,H*W) 上拼接，将参与 cat 的张量降为 3 阶
+                    b_m, c_ml, h_m, w_m = match_left.shape
+                    c_sem = sem.shape[1]
+                    hw = h_m * w_m
+                    match_left = torch.cat(
+                        (match_left.reshape(b_m, c_ml, hw),
+                         sem.reshape(b_m, c_sem, hw)),
+                        dim=1).view(b_m, c_ml + c_sem, h_m, w_m)
+                    match_right = torch.cat(
+                        (match_right.reshape(b_m, c_ml, hw),
+                         sem.reshape(b_m, c_sem, hw)),
+                        dim=1).view(b_m, c_ml + c_sem, h_m, w_m)
+                gwc_volume = build_gwc_volume_no_scatternd(
+                    match_left, match_right, self.args.max_disp // 4, 8)
+                geo_encoding_volume = self.cost_agg(gwc_volume, features_left)
 
-            hidden = self.hnet(features_left[0])
-            net = torch.tanh(hidden)
-            context = self.cnet(features_left[0])
-            context = list(self.context_zqr_conv(context).split(hd, dim=1))
+                prob = F.softmax(
+                    self.classifier(geo_encoding_volume).squeeze(1), dim=1)
+                init_disp = disparity_regression(prob, self.args.max_disp // 4,
+                                                 1)
 
-        geo_block = Geo_Encoding_Volume
-        geo_fn = geo_block(
-            geo_encoding_volume.float(),
-            radius=self.args.corr_radius,
-            num_levels=self.args.corr_levels)
-        disp = init_disp
-        disp_up = None
+                del prob, gwc_volume
 
-        if iters > 0:
-            for itr in range(iters):
-                disp = disp.detach()
-                geo_feat = geo_fn(disp)
-                with autocast(enabled=self.args.mixed_precision, dtype=getattr(torch, self.args.precision_dtype, torch.float16)):
-                    net, mask_feat_4, delta_disp = self.update_block(
-                        net, context, geo_feat, disp)
-                disp = disp + delta_disp
-                if test_mode and itr < iters - 1:
-                    continue
-                disp_up = self.upsample_disp(disp, mask_feat_4, stem_2x)
-            if disp_up is None:
-                raise RuntimeError('gru_iters>0 but disp_up was not computed')
-            return disp_up
+                spx_pred = None
+                if iters == 0:
+                    xspx = self.spx_4(features_left[0])
+                    xspx = self.spx_2(xspx, stem_2x)
+                    spx_pred = F.softmax(self.spx(xspx), dim=1)
 
-        assert spx_pred is not None
-        return context_upsample(init_disp * 4.0, spx_pred.float())
+                hidden = self.hnet(features_left[0])
+                net = torch.tanh(hidden)
+                context = self.cnet(features_left[0])
+                context = list(self.context_zqr_conv(context).split(hd, dim=1))
+
+            # mixed_precision=True 且外层为训练 AMP 时：离开内层 autocast 后仍会回到全局
+            # autocast，须单独在 FP32 下构造 Geo_Encoding_Volume 与采样。
+            if use_fp32_igev:
+                geo_fn = Geo_Encoding_Volume(
+                    geo_encoding_volume.float(),
+                    radius=self.args.corr_radius,
+                    num_levels=self.args.corr_levels)
+            else:
+                with _autocast_cuda_disabled():
+                    geo_fn = Geo_Encoding_Volume(
+                        geo_encoding_volume.float(),
+                        radius=self.args.corr_radius,
+                        num_levels=self.args.corr_levels)
+            disp = init_disp
+            disp_up = None
+
+            if iters > 0:
+                for itr in range(iters):
+                    disp = disp.detach()
+                    if use_fp32_igev:
+                        geo_feat = geo_fn(disp)
+                    else:
+                        with _autocast_cuda_disabled():
+                            geo_feat = geo_fn(disp)
+                    with autocast(
+                            enabled=self.args.mixed_precision,
+                            dtype=getattr(torch, self.args.precision_dtype,
+                                          torch.float16)):
+                        net, mask_feat_4, delta_disp = self.update_block(
+                            net, context, geo_feat, disp)
+                    disp = disp + delta_disp
+                    if test_mode and itr < iters - 1:
+                        continue
+                    disp_up = self.upsample_disp(disp, mask_feat_4, stem_2x)
+                if disp_up is None:
+                    raise RuntimeError('gru_iters>0 but disp_up was not computed')
+                return disp_up
+
+            assert spx_pred is not None
+            return context_upsample(init_disp * 4.0, spx_pred.float())
